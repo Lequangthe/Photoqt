@@ -1,0 +1,31 @@
+<b>Photok – Privater Foto-Tresor, Fotos & Videos verstecken (Open Source)</b>
+
+Photok ist ein sicherer Foto-Tresor, mit dem du Fotos und Videos zuverlässig verstecken kannst. Schütze deine privaten Medien mit starker AES-256-Verschlüsselung, erstelle eine verschlüsselte Galerie und bewahre sensible Erinnerungen sicher auf deinem eigenen Gerät auf.
+
+Alle Dateien werden lokal auf deinem Gerät verschlüsselt und nur im Arbeitsspeicher entschlüsselt, während du die App verwendest. Ein Cloud-Upload ist nicht erforderlich.
+
+Photok ist Open Source, werbefrei und verfolgt einen konsequenten Privacy-First-Ansatz. Die App verwendet minimale, datenschutzfreundliche Nutzungsanalysen, um Stabilität und Benutzererlebnis zu verbessern.
+
+<b>Warum Photok?</b>
+• Fotos und Videos sicher verstecken
+• Privater, verschlüsselter Galerie-Tresor mit AES-256
+• Offline-Speicherung – deine Dateien bleiben auf deinem Gerät
+• Open Source und transparente Sicherheit
+• Werbefreie Nutzung
+• Entwickelt von einem unabhängigen Entwickler
+
+<b>Funktionen des Foto-Tresors</b>
+• Fotos & Videos aus deiner Galerie importieren
+• Private Medien in Alben organisieren
+• Dateien jederzeit wieder exportieren
+• Verschlüsselte Backups erstellen und wiederherstellen
+• Tresor per Fingerabdruck entsperren
+• Medien direkt an Photok teilen
+• App-Icon optional ausblenden
+• Originaldateien nach dem Import automatisch löschen
+
+<b>Datenschutz im Fokus</b>
+Photok wurde für Menschen entwickelt, die echte Kontrolle über ihre privaten Fotos und Videos möchten.
+Die Verschlüsselung erfolgt vollständig auf deinem Gerät. Datenschutzfreundliche Nutzungsanalysen dienen ausschließlich der Verbesserung der App und werden niemals für Werbung oder app-übergreifendes Tracking verwendet.
+
+<a href="https://github.com/leonlatsch/Photok">Zum Open-Source-Projekt auf GitHub.</a>
