@@ -18,15 +18,15 @@
 
     <data>
 
-        <import type="dev.leonlatsch.photoqt.databinding.BindingConverters" />
+        <import type="com.quangthe.photoqt.databinding.BindingConverters" />
 
         <variable
             name="context"
-            type="dev.leonlatsch.photoqt.backup.ui.RestoreBackupDialogFragment" />
+            type="com.quangthe.photoqt.backup.ui.RestoreBackupDialogFragment" />
 
         <variable
             name="viewModel"
-            type="dev.leonlatsch.photoqt.backup.ui.RestoreBackupViewModel" />
+            type="com.quangthe.photoqt.backup.ui.RestoreBackupViewModel" />
 
     </data>
 

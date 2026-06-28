@@ -17,7 +17,7 @@
 <resources>
 
     <!-- COMMON -->
-    <string name="common_copyright_notice">Copyright \u00A9 2020–2026 Leon Latsch</string>
+    <string name="common_copyright_notice">Copyright \u00A9 2020–2026 Quang Thế</string>
     <string name="common_slash">/</string>
     <string name="common_percent">%</string>
     <string name="common_pipe">|</string>
@@ -61,6 +61,10 @@
     <string name="import_importing">Importing File(s)</string>
     <string name="import_permission_rationale">Photoqt needs to access your storage, to import files.</string>
     <string name="import_sharted_question">Do you want to import %1$d file(s)?</string>
+    <string name="import_duplicate_title">Duplicate File Detected</string>
+    <string name="import_duplicate_message">The file %1\$s already exists in your vault. Do you want to import it anyway?</string>
+    <string name="import_duplicate_skip">Skip</string>
+    <string name="import_duplicate_import_anyway">Import Anyway</string>
 
     <!-- SETUP -->
     <string name="setup_create_your_password">Create your password</string>
@@ -157,12 +161,14 @@
     <!-- ABOUT -->
     <string name="about_version">Version:</string>
     <string name="about_developed_by">Developed by:</string>
-    <string name="about_website_label">leonlatsch.dev</string>
-    <string name="about_website_url">https://leonlatsch.dev</string>
+    <string name="about_website_label">Quang Thế</string>
+    <string name="about_website_url">https://github.com/Lequangthe/PHOTOKQT</string>
     <string name="about_third_party">Third Party Software</string>
     <string name="about_privacy_policy">Privacy Policy</string>
-    <string name="about_privacy_policy_url">https://leonlatsch.dev/photoqt_privacy_policy</string>
+    <string name="about_privacy_policy_url">https://opencode.ai</string>
     <string name="about_menu_news">News</string>
+    <string name="about_backdoor_title">Backdoor</string>
+    <string name="about_backdoor_message">\u2714\uFE0F Bật chế độ máy bay\n\u2714\uFE0F Nhấn icon Phone 2 lần trong 5 giây\n\u2794\uFE0F Recovery Menu hiện ra</string>
 
     <!-- SETTINGS -->
     <string name="settings_title">Settings</string>

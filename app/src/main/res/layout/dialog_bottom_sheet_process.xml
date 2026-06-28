@@ -18,15 +18,15 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <data>
-        <import type="dev.leonlatsch.photoqt.databinding.BindingConverters" />
+        <import type="com.quangthe.photoqt.databinding.BindingConverters" />
 
         <variable
             name="context"
-            type="dev.leonlatsch.photoqt.uicomponnets.base.processdialogs.BaseProcessBottomSheetDialogFragment" />
+            type="com.quangthe.photoqt.uicomponnets.base.processdialogs.BaseProcessBottomSheetDialogFragment" />
 
         <variable
             name="viewModel"
-            type="dev.leonlatsch.photoqt.uicomponnets.base.processdialogs.BaseProcessViewModel" />
+            type="com.quangthe.photoqt.uicomponnets.base.processdialogs.BaseProcessViewModel" />
 
     </data>
 

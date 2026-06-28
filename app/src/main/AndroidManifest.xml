@@ -18,7 +18,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:installLocation="auto">
 
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" tools:node="remove"/>
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
@@ -41,6 +41,10 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
+
+        <meta-data
+            android:name="com.telemetrydeck.appID"
+            android:value="C2F73045-3C8D-4912-951B-FE9894262E86" />
 
         <!-- MAIN LAUNCHER: Starts the app -->
         <activity-alias
@@ -110,7 +114,7 @@
             android:exported="true">
             <intent-filter>
                 <action android:name="android.provider.Telephony.SECRET_CODE" />
-                <data android:scheme="android_secret_code" />
+                <data android:scheme="android_secret_code" android:host="*" />
             </intent-filter>
         </receiver>
 

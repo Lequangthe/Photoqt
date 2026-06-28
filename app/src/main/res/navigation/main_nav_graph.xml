@@ -21,7 +21,7 @@
     app:startDestination="@id/initialFragment">
     <fragment
         android:id="@+id/settingsFragment"
-        android:name="dev.leonlatsch.photoqt.settings.ui.SettingsFragment"
+        android:name="com.quangthe.photoqt.settings.ui.SettingsFragment"
         android:label="SettingsFragment">
         <action
             android:id="@+id/action_settingsFragment_to_aboutFragment"
@@ -40,7 +40,7 @@
     </fragment>
     <fragment
         android:id="@+id/aboutFragment"
-        android:name="dev.leonlatsch.photoqt.settings.ui.AboutFragment"
+        android:name="com.quangthe.photoqt.settings.ui.AboutFragment"
         android:label="AboutFragment">
         <action
             android:id="@+id/action_aboutFragment_to_ossLicensesFragment"
@@ -52,7 +52,7 @@
     </fragment>
     <fragment
         android:id="@+id/setupFragment"
-        android:name="dev.leonlatsch.photoqt.setup.ui.SetupFragment"
+        android:name="com.quangthe.photoqt.setup.ui.SetupFragment"
         android:label="fragment_setup"
         tools:layout="@layout/fragment_setup">
         <action
@@ -70,7 +70,7 @@
     </fragment>
     <fragment
         android:id="@+id/unlockFragment"
-        android:name="dev.leonlatsch.photoqt.unlock.ui.UnlockFragment"
+        android:name="com.quangthe.photoqt.unlock.ui.UnlockFragment"
         android:label="fragment_unlock"
         tools:layout="@layout/fragment_unlock">
         <action
@@ -99,7 +99,7 @@
     </fragment>
     <fragment
         android:id="@+id/onBoardingFragment"
-        android:name="dev.leonlatsch.photoqt.onboarding.ui.OnBoardingFragment"
+        android:name="com.quangthe.photoqt.onboarding.ui.OnBoardingFragment"
         android:label="fragment_intro"
         tools:layout="@layout/fragment_onboarding">
         <action
@@ -114,7 +114,7 @@
     </fragment>
     <fragment
         android:id="@+id/initialFragment"
-        android:name="dev.leonlatsch.photoqt.appstart.ui.InitialFragment"
+        android:name="com.quangthe.photoqt.appstart.ui.InitialFragment"
         android:label="InitialFragment">
         <action
             android:id="@+id/action_initialFragment_to_unlockFragment"
@@ -134,15 +134,15 @@
     </fragment>
     <fragment
         android:id="@+id/creditsFragment"
-        android:name="dev.leonlatsch.photoqt.settings.ui.credits.CreditsFragment"
+        android:name="com.quangthe.photoqt.settings.ui.credits.CreditsFragment"
         android:label="CreditsFragment" />
     <fragment
         android:id="@+id/ossLicensesFragment"
-        android:name="dev.leonlatsch.photoqt.settings.ui.thirdparty.OssLicensesFragment"
+        android:name="com.quangthe.photoqt.settings.ui.thirdparty.OssLicensesFragment"
         android:label="OssLicensesFragment" />
     <fragment
         android:id="@+id/imageViewerFragment"
-        android:name="dev.leonlatsch.photoqt.imageviewer.ui.ImageViewerFragment"
+        android:name="com.quangthe.photoqt.imageviewer.ui.ImageViewerFragment"
         android:label="ImageViewerFragment">
         <argument
             android:name="photo_uuid"
@@ -155,16 +155,16 @@
     </fragment>
     <fragment
         android:id="@+id/galleryFragment"
-        android:name="dev.leonlatsch.photoqt.gallery.ui.GalleryFragment"
+        android:name="com.quangthe.photoqt.gallery.ui.GalleryFragment"
         android:label="GalleryFragment" />
     <fragment
         android:id="@+id/albumsFragment"
-        android:name="dev.leonlatsch.photoqt.gallery.albums.ui.AlbumsFragment"
+        android:name="com.quangthe.photoqt.gallery.albums.ui.AlbumsFragment"
         android:label="GalleryFragment">
     </fragment>
     <fragment
         android:id="@+id/albumDetailFragment"
-        android:name="dev.leonlatsch.photoqt.gallery.albums.detail.ui.AlbumDetailFragment"
+        android:name="com.quangthe.photoqt.gallery.albums.detail.ui.AlbumDetailFragment"
         android:label="AlbumDetailFragment">
         <argument
             android:name="album_uuid"
@@ -197,7 +197,7 @@
         />
     <fragment
         android:id="@+id/smartCollectionFragment"
-        android:name="dev.leonlatsch.photoqt.gallery.albums.smartcollection.ui.SmartCollectionFragment"
+        android:name="com.quangthe.photoqt.gallery.albums.smartcollection.ui.SmartCollectionFragment"
         android:label="SmartCollectionFragment">
         <argument
             android:name="collection_type"
@@ -206,7 +206,7 @@
     </fragment>
     <fragment
         android:id="@+id/encryptionMigrationFragment"
-        android:name="dev.leonlatsch.photoqt.encryption.migration.ui.EncryptionMigrationFragment"
+        android:name="com.quangthe.photoqt.encryption.migration.ui.EncryptionMigrationFragment"
         android:label="EncryptionMigrationFragment" >
         <action
             android:id="@+id/action_encryptionMigrationFragment_to_galleryFragment"

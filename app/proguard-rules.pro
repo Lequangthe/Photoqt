@@ -11,7 +11,7 @@
 -keepattributes *Annotation*
 
 # Keep fields
--keepclassmembers class dev.leonlatsch.photoqt.** {
+-keepclassmembers class com.quangthe.photoqt.** {
     <fields>;
 }
 

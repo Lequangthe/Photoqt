@@ -21,11 +21,11 @@
 
         <variable
             name="viewModel"
-            type="dev.leonlatsch.photoqt.backup.ui.UnlockBackupViewModel" />
+            type="com.quangthe.photoqt.backup.ui.UnlockBackupViewModel" />
 
         <variable
             name="context"
-            type="dev.leonlatsch.photoqt.backup.ui.UnlockBackupDialogFragment" />
+            type="com.quangthe.photoqt.backup.ui.UnlockBackupDialogFragment" />
     </data>
 
     <LinearLayout
@@ -43,7 +43,7 @@
             android:layout_marginBottom="@dimen/small_gap"
             android:text="@string/backup_unlock_title" />
 
-        <dev.leonlatsch.photoqt.uicomponnets.PasswordEditText
+        <com.quangthe.photoqt.uicomponnets.PasswordEditText
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:textValue="@={viewModel.password}" />

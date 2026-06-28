@@ -8,8 +8,6 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose") version "2.2.21"
 }
 
-val isReleaseBuildInvocation: Boolean = gradle.startParameter.taskNames.any { it.contains("Release", ignoreCase = true) }
-
 val appVersionName: String by project
 val appVersionCode: String by project
 
@@ -20,7 +18,7 @@ android {
     compileSdk = VersionCodes.BAKLAVA
 
     defaultConfig {
-        applicationId = "dev.leonlatsch.photoqt"
+        applicationId = "com.quangthe.photoqt"
         minSdk = VersionCodes.P
         targetSdk = VersionCodes.BAKLAVA
 
@@ -36,29 +34,10 @@ android {
             }
         }
 
+        buildConfigField("Boolean", "PLAY", "false")
+
         base {
             archivesName = "photoqt-$versionName"
-        }
-    }
-
-    flavorDimensions += "distribution"
-    productFlavors {
-        create("play") {
-            dimension = "distribution"
-            buildConfigField("Boolean", "PLAY", "true")
-
-            if (!isReleaseBuildInvocation) {
-                versionNameSuffix = "-play-debug"
-            }
-        }
-
-        create("foss") {
-            dimension = "distribution"
-            buildConfigField("Boolean", "PLAY", "false")
-
-            if (!isReleaseBuildInvocation) {
-                versionNameSuffix = "-foss-debug"
-            }
         }
     }
 
@@ -95,7 +74,7 @@ android {
         lintConfig = file("$rootDir/gradle/lint.xml")
         baseline = file("$rootDir/gradle/lint-baseline.xml")
     }
-    namespace = "dev.leonlatsch.photoqt"
+    namespace = "com.quangthe.photoqt"
 }
 
 licenseReport {
@@ -107,14 +86,6 @@ licenseReport {
     copyHtmlReportToAssets = true
 
     useVariantSpecificAssetDirs = true
-}
-
-fun DependencyHandler.playImplementation(dependencyNotation: Any) {
-    add("playImplementation", dependencyNotation)
-}
-
-fun DependencyHandler.fossImplementation(dependencyNotation: Any) {
-    add("fossImplementation", dependencyNotation)
 }
 
 dependencies {
@@ -131,8 +102,15 @@ dependencies {
     // Kotlin Extensions and Coroutines support for Room
     implementation("androidx.room:room-ktx:2.8.4")
 
+    // Paging 3
+    implementation("androidx.paging:paging-runtime:3.3.6")
+    implementation("androidx.paging:paging-compose:3.3.6")
+
     // ViewPager2
     implementation("androidx.viewpager2:viewpager2:1.1.0")
+
+    // DataStore
+    implementation("androidx.datastore:datastore-preferences:1.1.4")
 
     // Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")

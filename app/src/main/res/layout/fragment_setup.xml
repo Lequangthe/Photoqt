@@ -24,7 +24,7 @@
 
         <variable
             name="viewModel"
-            type="dev.leonlatsch.photoqt.setup.ui.SetupViewModel" />
+            type="com.quangthe.photoqt.setup.ui.SetupViewModel" />
     </data>
 
     <FrameLayout
@@ -71,14 +71,14 @@
                 android:paddingEnd="20dp"
                 android:paddingBottom="20dp">
 
-                <dev.leonlatsch.photoqt.uicomponnets.PasswordEditText
+                <com.quangthe.photoqt.uicomponnets.PasswordEditText
                     android:id="@+id/setupPasswordEditText"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     app:PasswordEditTextHint="@string/setup_enter_password"
                     app:textValue="@={viewModel.password}" />
 
-                <dev.leonlatsch.photoqt.uicomponnets.PasswordEditText
+                <com.quangthe.photoqt.uicomponnets.PasswordEditText
                     android:id="@+id/setupConfirmPasswordEditText"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"

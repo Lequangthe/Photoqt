@@ -21,7 +21,7 @@
 
         <variable
             name="viewModel"
-            type="dev.leonlatsch.photoqt.recoverymenu.RecoveryMenuViewModel" />
+            type="com.quangthe.photoqt.recoverymenu.RecoveryMenuViewModel" />
     </data>
 
     <androidx.constraintlayout.widget.ConstraintLayout

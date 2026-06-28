@@ -22,7 +22,7 @@
 
         <variable
             name="context"
-            type="dev.leonlatsch.photoqt.onboarding.ui.OnBoardingFragment" />
+            type="com.quangthe.photoqt.onboarding.ui.OnBoardingFragment" />
     </data>
 
     <androidx.constraintlayout.widget.ConstraintLayout

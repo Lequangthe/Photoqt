@@ -22,7 +22,7 @@
 
         <variable
             name="context"
-            type="dev.leonlatsch.photoqt.main.ui.MainActivity" />
+            type="com.quangthe.photoqt.main.ui.MainActivity" />
     </data>
 
     <androidx.constraintlayout.widget.ConstraintLayout

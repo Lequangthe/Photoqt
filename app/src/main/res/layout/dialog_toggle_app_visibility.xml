@@ -20,13 +20,13 @@
 
         <variable
             name="context"
-            type="dev.leonlatsch.photoqt.settings.ui.hideapp.ToggleAppVisibilityDialog" />
+            type="com.quangthe.photoqt.settings.ui.hideapp.ToggleAppVisibilityDialog" />
 
         <variable
             name="viewModel"
-            type="dev.leonlatsch.photoqt.settings.ui.hideapp.ToggleAppVisibilityViewModel" />
+            type="com.quangthe.photoqt.settings.ui.hideapp.ToggleAppVisibilityViewModel" />
 
-        <import type="dev.leonlatsch.photoqt.databinding.BindingConverters" />
+        <import type="com.quangthe.photoqt.databinding.BindingConverters" />
     </data>
 
     <LinearLayout
