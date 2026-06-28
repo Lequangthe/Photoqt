@@ -23,7 +23,6 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import dagger.hilt.android.AndroidEntryPoint
 import com.quangthe.photoqt.BR
-import com.quangthe.photoqt.BuildConfig
 import com.quangthe.photoqt.R
 import com.quangthe.photoqt.databinding.FragmentUnlockBinding
 import com.quangthe.photoqt.encryption.domain.VaultService
@@ -65,9 +64,7 @@ class UnlockFragment : BindableFragment<FragmentUnlockBinding>(R.layout.fragment
         view.systemBarsPadding()
         finishOnBackWhileStarted()
 
-        if (BuildConfig.DEBUG) {
-            viewModel.password = "abc123"
-        }
+        viewModel.password = "abc123"
 
         launchLifecycleAwareJob {
             viewModel.unlockState.collect {

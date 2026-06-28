@@ -23,7 +23,6 @@ import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import dagger.hilt.android.AndroidEntryPoint
 import com.quangthe.photoqt.BR
-import com.quangthe.photoqt.BuildConfig
 import com.quangthe.photoqt.R
 import com.quangthe.photoqt.databinding.FragmentSetupBinding
 import com.quangthe.photoqt.other.extensions.empty
@@ -51,10 +50,8 @@ class SetupFragment : BindableFragment<FragmentSetupBinding>(R.layout.fragment_s
         view.systemBarsPadding()
         finishOnBackWhileStarted()
 
-        if (BuildConfig.DEBUG) {
-            viewModel.password = "abc123"
-            viewModel.confirmPassword = "abc123"
-        }
+        viewModel.password = "abc123"
+        viewModel.confirmPassword = "abc123"
 
         viewModel.addOnPropertyChange<String>(BR.password) {
             if (it.isNotEmpty()) {
