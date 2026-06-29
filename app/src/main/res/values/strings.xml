@@ -107,6 +107,8 @@
     <string name="import_menu_browse_files_description">Import photos and videos from your file manager.</string>
     <string name="import_menu_delete_warning">Imported files will be deleted</string>
     <string name="import_menu_album_tooltip">Files will be added to \"%s\" after importing</string>
+    <string name="import_delete_originals_title">Delete original files?</string>
+    <string name="import_delete_originals_message">Delete the original files after importing? You can find them later in the trash.</string>
 
     <!-- PROCESS -->
     <string name="process_close">Close</string>

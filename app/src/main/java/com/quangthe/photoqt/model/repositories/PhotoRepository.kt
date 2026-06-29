@@ -159,7 +159,7 @@ class PhotoRepository @Inject constructor(
      * Collects meta data and calls [safeCreatePhoto].
      * Returns re created uuid
      */
-    suspend fun safeImportPhoto(sourceUri: Uri, importSource: ImportSource): String {
+    suspend fun safeImportPhoto(sourceUri: Uri): String {
         val metaData = app.contentResolver.getMetadataFor(sourceUri)
 
         val type = PhotoType.fromMimeType(metaData.mimeType)
@@ -180,11 +180,6 @@ class PhotoRepository @Inject constructor(
 
         if (!created) {
             return String.empty
-        }
-
-        if (config.deleteImportedFiles && importSource != ImportSource.Share) {
-            val deleted = io.deleteFile(sourceUri)
-            Timber.d("Delete after import: sourceUri=%s, deleted=%s", sourceUri, deleted)
         }
 
         return photo.uuid

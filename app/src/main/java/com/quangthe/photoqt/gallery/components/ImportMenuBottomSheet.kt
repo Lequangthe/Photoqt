@@ -19,6 +19,7 @@ package com.quangthe.photoqt.gallery.components
 import android.net.Uri
 import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -62,7 +63,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import com.quangthe.photoqt.R
-import com.quangthe.photoqt.model.database.entity.PhotoType
 import com.quangthe.photoqt.other.extensions.launchAndIgnoreTimer
 import com.quangthe.photoqt.settings.ui.compose.LocalConfig
 import com.quangthe.photoqt.ui.theme.AppTheme
@@ -118,8 +118,8 @@ private fun ImportMenuDialogContent(
         }
     }
 
-    val openDocumentLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.OpenMultipleDocuments()
+    val photoPickerLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.PickMultipleVisualMedia()
     ) { uris: List<Uri> ->
         onImportNewItems(uris)
     }
@@ -182,8 +182,8 @@ private fun ImportMenuDialogContent(
                 }
             },
             onClick = {
-                openDocumentLauncher.launchAndIgnoreTimer(
-                    input = PhotoType.entries.map { it.mimeType }.toTypedArray(),
+                photoPickerLauncher.launchAndIgnoreTimer(
+                    input = PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageAndVideo),
                     activity = activity,
                 )
             }

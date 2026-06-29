@@ -97,7 +97,6 @@ class ImportViewModel @Inject constructor(
     override suspend fun processItem(item: Uri) {
         val photoUUID = photoRepository.safeImportPhoto(
             sourceUri = item,
-            importSource = importSource,
         )
         if (photoUUID.isEmpty()) {
             failuresOccurred = true
@@ -111,12 +110,12 @@ class ImportViewModel @Inject constructor(
 
     override suspend fun postProcess() {
         if (config.deleteImportedFiles && importSource != ImportSource.Share) {
-            val mediaUris = items.mapNotNull { toMediaStoreUri(it) }
-            if (mediaUris.isNotEmpty()) {
+            if (items.isNotEmpty()) {
+                deleteConsentResult = kotlinx.coroutines.CompletableDeferred()
                 deleteConsentRequest.send(Unit)
                 val approved = deleteConsentResult.await()
                 if (approved) {
-                    Timber.d("postProcess: user approved deletion of %d files", mediaUris.size)
+                    Timber.d("postProcess: user approved deletion of %d files", items.size)
                 } else {
                     Timber.d("postProcess: user denied deletion")
                 }
@@ -136,22 +135,40 @@ class ImportViewModel @Inject constructor(
 
     companion object {
         fun toMediaStoreUri(fileUri: Uri): Uri? {
-            if (fileUri.authority != "com.android.providers.media.documents") return null
-            return try {
-                val docId = DocumentsContract.getDocumentId(fileUri)
-                val parts = docId.split(":")
-                if (parts.size < 2) return null
-                val id = parts.last()
-                val table = when (parts[0]) {
-                    "image" -> MediaStore.Images.Media.EXTERNAL_CONTENT_URI
-                    "video" -> MediaStore.Video.Media.EXTERNAL_CONTENT_URI
-                    "audio" -> MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
-                    else -> return null
+            val authority = fileUri.authority
+            val path = fileUri.path ?: ""
+
+            // Handle Photo Picker URIs (both old and new styles)
+            if ((authority == "media" && path.contains("photopicker")) || authority == "com.android.providers.media.photopicker") {
+                val id = fileUri.lastPathSegment
+                if (id != null && id.all { it.isDigit() }) {
+                    return MediaStore.Files.getContentUri("external", id.toLong())
                 }
-                table.buildUpon().appendPath(id).build()
-            } catch (e: Exception) {
-                null
             }
+
+            if (authority == "media") {
+                return fileUri
+            }
+
+            if (authority == "com.android.providers.media.documents") {
+                return try {
+                    val docId = DocumentsContract.getDocumentId(fileUri)
+                    val parts = docId.split(":")
+                    if (parts.size < 2) return null
+                    val id = parts.last()
+                    val table = when (parts[0]) {
+                        "image" -> MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+                        "video" -> MediaStore.Video.Media.EXTERNAL_CONTENT_URI
+                        "audio" -> MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
+                        else -> return null
+                    }
+                    table.buildUpon().appendPath(id).build()
+                } catch (e: Exception) {
+                    null
+                }
+            }
+
+            return null
         }
     }
 }
