@@ -38,6 +38,8 @@ import timber.log.Timber
 import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
+import java.security.DigestInputStream
+import java.security.MessageDigest
 import java.util.UUID
 import javax.inject.Inject
 import kotlinx.coroutines.flow.Flow
@@ -147,6 +149,8 @@ class PhotoRepository @Inject constructor(
 
     suspend fun findDuplicate(fileName: String, size: Long) = photoDao.findDuplicate(fileName, size)
 
+    suspend fun findDuplicateBySha256(sha256: String) = photoDao.findDuplicateBySha256(sha256)
+
     // endregion
 
     // region IO
@@ -156,8 +160,8 @@ class PhotoRepository @Inject constructor(
     /**
      * Import a photo from a url.
      *
-     * Collects meta data and calls [safeCreatePhoto].
-     * Returns re created uuid
+     * Computes SHA-256 during the encrypted copy to detect content-based duplicates.
+     * Returns the created uuid, or empty string on failure / duplicate.
      */
     suspend fun safeImportPhoto(sourceUri: Uri): String {
         val metaData = app.contentResolver.getMetadataFor(sourceUri)
@@ -165,8 +169,8 @@ class PhotoRepository @Inject constructor(
         val type = PhotoType.fromMimeType(metaData.mimeType)
         if (type == PhotoType.UNDEFINED) return String.empty
 
+        val inputStream = io.openFileInput(sourceUri) ?: return String.empty
 
-        val inputStream = io.openFileInput(sourceUri)
         val photo = Photo(
             fileName = metaData.fileName ?: UUID.randomUUID().toString(),
             importedAt = System.currentTimeMillis(),
@@ -175,48 +179,50 @@ class PhotoRepository @Inject constructor(
             size = metaData.size ?: 0,
         )
 
-        val created = safeCreatePhoto(photo, inputStream, sourceUri)
-        inputStream?.lazyClose()
-
-        if (!created) {
+        val encryptedDestination = vaultFileStorage.openEncryptedOutput(photo.internalFileName)
+        if (encryptedDestination == null) {
+            inputStream.lazyClose()
             return String.empty
         }
 
-        return photo.uuid
-    }
+        val digest = MessageDigest.getInstance("SHA-256")
+        val digestInputStream = DigestInputStream(inputStream, digest)
 
-    /**
-     * Writes and encrypts the [source] into internal storage.
-     * Saves the [photo] afterwords.
-     * It is up to the caller to close the [source].
-     * Does create a thumbnail, IF [origUri] is specified.
-     *
-     * @return true, if everything worked
-     */
-    private suspend fun safeCreatePhoto(
-        photo: Photo,
-        source: InputStream?,
-        origUri: Uri? = null
-    ): Boolean {
-        val fileLen = createPhotoFile(photo, source)
-        var success = fileLen != -1L
-
-        if (success) {
-            photo.size = fileLen
-
-            if (origUri != null) {
-                createThumbnail(photo, origUri)
-            }
-
-            val photoId = insert(photo)
-            success = photoId != -1L
+        val fileLen: Long = try {
+            digestInputStream.copyTo(encryptedDestination)
+        } catch (e: IOException) {
+            Timber.e("Error while writing file: $e")
+            -1L
+        } finally {
+            digestInputStream.lazyClose()
+            encryptedDestination.lazyClose()
         }
 
-        if (!success) {
+        if (fileLen == -1L) {
             deleteInternalPhotoData(photo)
+            return String.empty
         }
 
-        return success
+        val sha256 = digest.digest().joinToString("") { "%02x".format(it) }
+
+        val existing = photoDao.findDuplicateBySha256(sha256)
+        if (existing != null) {
+            Timber.d("Duplicate content detected by SHA-256: %s. Skipping.", sha256)
+            deleteInternalPhotoData(photo)
+            return String.empty
+        }
+
+        val photoWithHash = photo.copy(size = fileLen, sha256 = sha256)
+
+        createThumbnail(photoWithHash, sourceUri)
+
+        val photoId = insert(photoWithHash)
+        if (photoId == -1L) {
+            deleteInternalPhotoData(photoWithHash)
+            return String.empty
+        }
+
+        return photoWithHash.uuid
     }
 
     /**

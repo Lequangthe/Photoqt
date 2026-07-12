@@ -67,10 +67,7 @@ class ImportBottomSheetDialogFragment(
         ActivityResultContracts.RequestPermission()
     ) { granted ->
         if (granted) {
-            lifecycleScope.launch {
-                deleteFilesDirectly(viewModel.items)
-                viewModel.setDeleteConsentResult(true)
-            }
+            showAppDeleteConfirmation(viewModel.items)
         } else {
             viewModel.setDeleteConsentResult(false)
         }
@@ -81,26 +78,7 @@ class ImportBottomSheetDialogFragment(
 
         lifecycleScope.launch {
             viewModel.deleteConsentFlow.collect {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                    // On Android 11+ we use the system dialog, so skip our own to avoid double dialogs.
-                    requestDeletePermission()
-                } else {
-                    val context = requireContext()
-                    val title = getString(R.string.import_delete_originals_title)
-                    val message = getString(R.string.import_delete_originals_message)
-
-                    androidx.appcompat.app.AlertDialog.Builder(context)
-                        .setTitle(title)
-                        .setMessage(message)
-                        .setPositiveButton(R.string.common_yes) { _, _ ->
-                            lifecycleScope.launch { requestDeletePermission() }
-                        }
-                        .setNegativeButton(R.string.common_no) { _, _ ->
-                            viewModel.setDeleteConsentResult(false)
-                        }
-                        .setCancelable(false)
-                        .show()
-                }
+                requestDeletePermission()
             }
         }
 
@@ -109,6 +87,27 @@ class ImportBottomSheetDialogFragment(
                 showDuplicateDialog(fileName)
             }
         }
+    }
+
+    private fun showAppDeleteConfirmation(urisToDelete: List<Uri>) {
+        val context = requireContext()
+        val title = getString(R.string.import_delete_originals_title)
+        val message = getString(R.string.import_delete_originals_message)
+
+        androidx.appcompat.app.AlertDialog.Builder(context)
+            .setTitle(title)
+            .setMessage(message)
+            .setPositiveButton(R.string.common_yes) { _, _ ->
+                lifecycleScope.launch {
+                    deleteFilesDirectly(urisToDelete)
+                    viewModel.setDeleteConsentResult(true)
+                }
+            }
+            .setNegativeButton(R.string.common_no) { _, _ ->
+                viewModel.setDeleteConsentResult(false)
+            }
+            .setCancelable(false)
+            .show()
     }
 
     private fun showDuplicateDialog(fileName: String) {
@@ -155,8 +154,11 @@ class ImportBottomSheetDialogFragment(
             try {
                 contentResolver.query(mediaUri, projection, null, null, null)?.use { cursor ->
                     if (cursor.moveToFirst()) {
-                        val mediaType = cursor.getInt(cursor.getColumnIndexOrThrow(android.provider.MediaStore.Files.FileColumns.MEDIA_TYPE))
-                        val mimeType = cursor.getString(cursor.getColumnIndexOrThrow(android.provider.MediaStore.Files.FileColumns.MIME_TYPE))
+                        val mediaTypeIdx = cursor.getColumnIndex(android.provider.MediaStore.Files.FileColumns.MEDIA_TYPE)
+                        val mimeTypeIdx = cursor.getColumnIndex(android.provider.MediaStore.Files.FileColumns.MIME_TYPE)
+
+                        val mediaType = if (mediaTypeIdx != -1) cursor.getInt(mediaTypeIdx) else -1
+                        val mimeType = if (mimeTypeIdx != -1) cursor.getString(mimeTypeIdx) else null
 
                         val table = when {
                             mediaType == android.provider.MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE -> android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI
@@ -189,7 +191,7 @@ class ImportBottomSheetDialogFragment(
             }
         }
 
-        return if (authority == "media") mediaUri else null
+        return null
     }
 
     private fun requestDeletePermission() {
@@ -211,28 +213,29 @@ class ImportBottomSheetDialogFragment(
             return
         }
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && collectionUris.isNotEmpty()) {
-            try {
-                Timber.d("requestDeletePermission: requesting system delete for %d uris: %s", collectionUris.size, collectionUris)
-                val pendingIntent = MediaStore.createDeleteRequest(
-                    cr,
-                    collectionUris,
-                )
-                deleteConsentPending = { approved ->
-                    if (approved && otherUris.isNotEmpty()) {
-                        lifecycleScope.launch { deleteFilesDirectly(otherUris) }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            if (collectionUris.isNotEmpty()) {
+                try {
+                    Timber.d("requestDeletePermission: requesting system delete for %d uris: %s", collectionUris.size, collectionUris)
+                    val pendingIntent = MediaStore.createDeleteRequest(
+                        cr,
+                        collectionUris,
+                    )
+                    deleteConsentPending = { approved ->
+                        if (approved && otherUris.isNotEmpty()) {
+                            lifecycleScope.launch { deleteFilesDirectly(otherUris) }
+                        }
+                        viewModel.setDeleteConsentResult(approved)
                     }
-                    viewModel.setDeleteConsentResult(approved)
+                    deleteRequestLauncher.launch(
+                        IntentSenderRequest.Builder(pendingIntent).build()
+                    )
+                } catch (e: Exception) {
+                    Timber.e(e, "createDeleteRequest failed for collectionUris: %s", collectionUris)
+                    showAppDeleteConfirmation(viewModel.items)
                 }
-                deleteRequestLauncher.launch(
-                    IntentSenderRequest.Builder(pendingIntent).build()
-                )
-            } catch (e: Exception) {
-                Timber.e(e, "createDeleteRequest failed for collectionUris: %s", collectionUris)
-                lifecycleScope.launch {
-                    deleteFilesDirectly(viewModel.items)
-                    viewModel.setDeleteConsentResult(true)
-                }
+            } else {
+                showAppDeleteConfirmation(otherUris)
             }
         } else {
             val permission = Manifest.permission.WRITE_EXTERNAL_STORAGE
@@ -241,21 +244,27 @@ class ImportBottomSheetDialogFragment(
             ) {
                 writePermissionLauncher.launch(permission)
             } else {
-                lifecycleScope.launch {
-                    deleteFilesDirectly(viewModel.items)
-                    viewModel.setDeleteConsentResult(true)
-                }
+                showAppDeleteConfirmation(viewModel.items)
             }
         }
     }
 
     private suspend fun deleteFilesDirectly(uris: List<Uri>) = withContext(Dispatchers.IO) {
         val cr = requireContext().contentResolver
+        val context = requireContext()
         for (uri in uris) {
             try {
-                val mediaUri = toCollectionUri(uri, cr) ?: uri
-                val deleted = cr.delete(mediaUri, null, null)
-                Timber.d("deleteFilesDirectly: %s (original: %s) -> %d rows", mediaUri, uri, deleted)
+                val mediaUri = toCollectionUri(uri, cr)
+                if (mediaUri != null) {
+                    val deleted = cr.delete(mediaUri, null, null)
+                    Timber.d("deleteFilesDirectly (MediaStore): %s -> %d rows", mediaUri, deleted)
+                } else if (android.provider.DocumentsContract.isDocumentUri(context, uri)) {
+                    val deleted = android.provider.DocumentsContract.deleteDocument(cr, uri)
+                    Timber.d("deleteFilesDirectly (SAF): %s -> %b", uri, deleted)
+                } else {
+                    val deleted = cr.delete(uri, null, null)
+                    Timber.d("deleteFilesDirectly (Fallback): %s -> %d rows", uri, deleted)
+                }
             } catch (e: Exception) {
                 Timber.e(e, "deleteFilesDirectly failed for %s", uri)
             }

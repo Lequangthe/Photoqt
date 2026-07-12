@@ -20,6 +20,7 @@ import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
+import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -43,6 +44,7 @@ import com.quangthe.photoqt.R
 import com.quangthe.photoqt.gallery.albums.detail.ui.AlbumDetailUiEvent
 import com.quangthe.photoqt.gallery.albums.detail.ui.AlbumDetailViewModel
 import com.quangthe.photoqt.gallery.albums.ui.compose.RenameAlbumDialog
+import com.quangthe.photoqt.gallery.components.GalleryViewMode
 import com.quangthe.photoqt.sort.domain.SortConfig
 import com.quangthe.photoqt.sort.ui.SortingMenu
 import com.quangthe.photoqt.sort.ui.SortingMenuIconButton
@@ -94,6 +96,34 @@ fun AlbumDetailScreen(viewModel: AlbumDetailViewModel, navController: NavControl
                             sort = uiState.sort,
                             onSortChanged = { viewModel.handleUiEvent(AlbumDetailUiEvent.SortChanged(it)) },
                         )
+
+                        var showViewModeMenu by remember { mutableStateOf(false) }
+
+                        IconButton(onClick = { showViewModeMenu = true }) {
+                            Icon(
+                                painter = painterResource(R.drawable.ic_image),
+                                contentDescription = stringResource(R.string.view_mode_button),
+                            )
+                        }
+                        DropdownMenu(
+                            expanded = showViewModeMenu,
+                            onDismissRequest = { showViewModeMenu = false },
+                        ) {
+                            GalleryViewMode.entries.forEach { mode ->
+                                DropdownMenuItem(
+                                    text = {
+                                        Text(
+                                            if (mode == uiState.viewMode) "✓ ${stringResource(mode.labelRes)}"
+                                            else stringResource(mode.labelRes)
+                                        )
+                                    },
+                                    onClick = {
+                                        viewModel.handleUiEvent(AlbumDetailUiEvent.ViewModeChanged(mode))
+                                        showViewModeMenu = false
+                                    },
+                                )
+                            }
+                        }
 
                         IconButton(onClick = { showMore = true }) {
                             Icon(

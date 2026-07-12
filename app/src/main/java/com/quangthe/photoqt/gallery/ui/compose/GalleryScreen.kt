@@ -3,9 +3,9 @@ package com.quangthe.photoqt.gallery.ui.compose
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LargeTopAppBar
@@ -18,7 +18,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -27,6 +26,7 @@ import com.quangthe.photoqt.R
 import com.quangthe.photoqt.gallery.albums.domain.model.SmartCollectionType
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.quangthe.photoqt.gallery.components.AlbumPickerDialog
+import com.quangthe.photoqt.gallery.components.GalleryViewMode
 import com.quangthe.photoqt.gallery.components.ImportSharedDialog
 import com.quangthe.photoqt.gallery.components.rememberMultiSelectionState
 import com.quangthe.photoqt.gallery.ui.GalleryUiEvent
@@ -60,28 +60,10 @@ fun GalleryScreen(
                         if (uiState is GalleryUiState.Content) {
                             val contentState = uiState as GalleryUiState.Content
                             val sort = contentState.sort
+                            val viewMode = contentState.viewMode
 
                             var showSortMenu by remember { mutableStateOf(false) }
-
-                            FilterChip(
-                                selected = contentState.showClassification,
-                                onClick = { viewModel.handleUiEvent(GalleryUiEvent.ToggleClassification) },
-                                label = { Text("Phân loại") },
-                                colors = FilterChipDefaults.filterChipColors(
-                                    selectedContainerColor = Color(0xFF1976D2),
-                                ),
-                            )
-
-                            FilterChip(
-                                selected = contentState.showUnassignedOnly,
-                                onClick = { viewModel.handleUiEvent(GalleryUiEvent.ToggleUnassignedFilter) },
-                                label = {
-                                    Text(
-                                        if (contentState.showUnassignedOnly) stringResource(R.string.gallery_filter_unassigned)
-                                        else stringResource(R.string.gallery_filter_all)
-                                    )
-                                },
-                            )
+                            var showViewModeMenu by remember { mutableStateOf(false) }
 
                             SortingMenuIconButton(
                                 config = SortConfig.Gallery,
@@ -98,6 +80,32 @@ fun GalleryScreen(
                                     viewModel.handleUiEvent(GalleryUiEvent.SortChanged(sort))
                                 }
                             )
+
+                            IconButton(onClick = { showViewModeMenu = true }) {
+                                Icon(
+                                    painter = painterResource(R.drawable.ic_image),
+                                    contentDescription = stringResource(R.string.view_mode_button),
+                                )
+                            }
+                            DropdownMenu(
+                                expanded = showViewModeMenu,
+                                onDismissRequest = { showViewModeMenu = false },
+                            ) {
+                                GalleryViewMode.entries.forEach { mode ->
+                                    DropdownMenuItem(
+                                        text = {
+                                            Text(
+                                                if (mode == viewMode) "✓ ${stringResource(mode.labelRes)}"
+                                                else stringResource(mode.labelRes)
+                                            )
+                                        },
+                                        onClick = {
+                                            viewModel.handleUiEvent(GalleryUiEvent.ViewModeChanged(mode))
+                                            showViewModeMenu = false
+                                        },
+                                    )
+                                }
+                            }
 
                             IconButton(
                                 onClick = { viewModel.openSmartCollection(SmartCollectionType.Trash) }
@@ -133,6 +141,7 @@ fun GalleryScreen(
                         handleUiEvent = { viewModel.handleUiEvent(it) },
                         multiSelectionState = multiSelectionState,
                         modifier = modifier,
+                        viewMode = contentUiState.viewMode,
                         onAlbumClicked = { viewModel.openAlbum(it) },
                     )
 

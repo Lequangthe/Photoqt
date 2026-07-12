@@ -33,7 +33,7 @@ import com.quangthe.photoqt.model.database.ref.AlbumPhotoCrossRefTable
 import com.quangthe.photoqt.sort.data.db.SortDao
 import com.quangthe.photoqt.sort.data.db.model.SortTable
 
-private const val DATABASE_VERSION = 7
+private const val DATABASE_VERSION = 8
 const val DATABASE_NAME = "photok.db"
 
 /**
@@ -76,6 +76,10 @@ const val DATABASE_NAME = "photok.db"
         AutoMigration(
             from = 6,
             to = 7,
+        ),
+        AutoMigration(
+            from = 7,
+            to = 8,
         ),
     ]
 )

@@ -27,26 +27,34 @@ import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.itemKey
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
@@ -76,11 +84,17 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 
 import com.quangthe.photoqt.R
+import com.quangthe.photoqt.gallery.components.GalleryViewMode
 import com.quangthe.photoqt.model.database.entity.PhotoType
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
 import com.quangthe.photoqt.other.extensions.launchAndIgnoreTimer
 import com.quangthe.photoqt.settings.ui.compose.LocalConfig
 import com.quangthe.photoqt.transcoding.compose.model.EncryptedImageRequestData
@@ -95,6 +109,7 @@ private const val LANDSCAPE_COLUMN_COUNT = 6
 
 @Composable
 fun PhotoGallery(
+    viewMode: GalleryViewMode = GalleryViewMode.Grid,
     photos: List<PhotoTile>,
     albumName: String?,
     multiSelectionState: MultiSelectionState,
@@ -118,12 +133,32 @@ fun PhotoGallery(
     }
 
     Box(modifier = modifier.fillMaxSize()) {
-        PhotoGrid(
-            photos = photos,
-            multiSelectionState = multiSelectionState,
-            openPhoto = onOpenPhoto,
-            lazyPhotos = lazyPhotos,
-        )
+        when (viewMode) {
+            GalleryViewMode.Grid -> PhotoGrid(
+                photos = photos,
+                multiSelectionState = multiSelectionState,
+                openPhoto = onOpenPhoto,
+                lazyPhotos = lazyPhotos,
+            )
+            GalleryViewMode.List -> PhotoListView(
+                photos = photos,
+                multiSelectionState = multiSelectionState,
+                openPhoto = onOpenPhoto,
+                lazyPhotos = lazyPhotos,
+            )
+            GalleryViewMode.Column -> PhotoColumnView(
+                photos = photos,
+                multiSelectionState = multiSelectionState,
+                openPhoto = onOpenPhoto,
+                lazyPhotos = lazyPhotos,
+            )
+            GalleryViewMode.Timeline -> PhotoTimelineView(
+                photos = photos,
+                multiSelectionState = multiSelectionState,
+                openPhoto = onOpenPhoto,
+                lazyPhotos = lazyPhotos,
+            )
+        }
 
         AnimatedVisibility(
             visible = multiSelectionState.isActive.value.not(),
@@ -610,6 +645,406 @@ private fun GalleryPhotoTile(
                     .align(Alignment.TopStart)
             )
         }
+    }
+}
+
+private fun formatFileSize(bytes: Long): String {
+    return when {
+        bytes < 1024 -> "$bytes B"
+        bytes < 1024 * 1024 -> "${bytes / 1024} KB"
+        bytes < 1024 * 1024 * 1024 -> "${"%.1f".format(bytes.toDouble() / (1024 * 1024))} MB"
+        else -> "${"%.2f".format(bytes.toDouble() / (1024 * 1024 * 1024))} GB"
+    }
+}
+
+private fun formatDate(timestamp: Long): String {
+    val sdf = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
+    return sdf.format(Date(timestamp))
+}
+
+@Composable
+private fun PhotoListView(
+    photos: List<PhotoTile>,
+    multiSelectionState: MultiSelectionState,
+    openPhoto: (PhotoTile) -> Unit,
+    modifier: Modifier = Modifier,
+    lazyPhotos: LazyPagingItems<PhotoTile>? = null,
+) {
+    val totalCount = lazyPhotos?.itemCount ?: photos.size
+
+    androidx.compose.foundation.lazy.LazyColumn(modifier = modifier.fillMaxWidth()) {
+        val list = if (lazyPhotos != null) {
+            (0 until totalCount).mapNotNull { lazyPhotos.peek(it) }
+        } else photos
+
+        items(list, key = { it.uuid }) { photo ->
+            ListPhotoRow(
+                photoTile = photo,
+                multiSelectionActive = multiSelectionState.isActive.value,
+                selected = multiSelectionState.selectedItems.value.contains(photo.uuid),
+                onClick = {
+                    if (multiSelectionState.isActive.value) {
+                        multiSelectionState.selectItem(photo.uuid)
+                    } else {
+                        openPhoto(photo)
+                    }
+                },
+                onLongClick = {
+                    multiSelectionState.selectItem(photo.uuid)
+                },
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun ListPhotoRow(
+    photoTile: PhotoTile,
+    multiSelectionActive: Boolean,
+    selected: Boolean,
+    onClick: () -> Unit,
+    onLongClick: () -> Unit,
+) {
+    val haptic = LocalHapticFeedback.current
+
+    androidx.compose.foundation.layout.Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .combinedClickable(
+                onClick = { onClick() },
+                onLongClick = {
+                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    onLongClick()
+                },
+            )
+            .padding(horizontal = 8.dp, vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(modifier = Modifier.size(56.dp)) {
+            val requestData = remember(photoTile) {
+                EncryptedImageRequestData(
+                    internalFileName = photoTile.internalThumbnailFileName,
+                    mimeType = photoTile.type.mimeType
+                )
+            }
+            Image(
+                painter = rememberEncryptedImagePainter(requestData),
+                contentDescription = photoTile.fileName,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clip(RoundedCornerShape(8.dp))
+            )
+        }
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .padding(start = 12.dp)
+        ) {
+            Text(
+                text = photoTile.fileName,
+                style = MaterialTheme.typography.bodyMedium,
+                maxLines = 1,
+            )
+            Text(
+                text = formatDate(photoTile.importedAt),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(
+                text = formatFileSize(photoTile.size),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        if (photoTile.type.isVideo) {
+            Icon(
+                painter = painterResource(R.drawable.ic_videocam),
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(end = 4.dp).size(18.dp),
+            )
+        }
+        if (photoTile.isFavorite) {
+            Icon(
+                painter = painterResource(R.drawable.ic_favorite),
+                contentDescription = null,
+                tint = Color.Red,
+                modifier = Modifier.size(18.dp),
+            )
+        }
+    }
+    HorizontalDivider(modifier = Modifier.padding(horizontal = 8.dp))
+}
+
+@Composable
+private fun PhotoColumnView(
+    photos: List<PhotoTile>,
+    multiSelectionState: MultiSelectionState,
+    openPhoto: (PhotoTile) -> Unit,
+    modifier: Modifier = Modifier,
+    lazyPhotos: LazyPagingItems<PhotoTile>? = null,
+) {
+    val totalCount = lazyPhotos?.itemCount ?: photos.size
+
+    androidx.compose.foundation.lazy.LazyColumn(modifier = modifier.fillMaxWidth()) {
+        val list = if (lazyPhotos != null) {
+            (0 until totalCount).mapNotNull { lazyPhotos.peek(it) }
+        } else photos
+
+        items(list, key = { it.uuid }) { photo ->
+            ColumnPhotoTile(
+                photoTile = photo,
+                multiSelectionActive = multiSelectionState.isActive.value,
+                selected = multiSelectionState.selectedItems.value.contains(photo.uuid),
+                onClick = {
+                    if (multiSelectionState.isActive.value) {
+                        multiSelectionState.selectItem(photo.uuid)
+                    } else {
+                        openPhoto(photo)
+                    }
+                },
+                onLongClick = {
+                    multiSelectionState.selectItem(photo.uuid)
+                },
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun ColumnPhotoTile(
+    photoTile: PhotoTile,
+    multiSelectionActive: Boolean,
+    selected: Boolean,
+    onClick: () -> Unit,
+    onLongClick: () -> Unit,
+) {
+    val haptic = LocalHapticFeedback.current
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .combinedClickable(
+                onClick = { onClick() },
+                onLongClick = {
+                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    onLongClick()
+                },
+            )
+            .padding(horizontal = 4.dp, vertical = 2.dp),
+    ) {
+        val shape = RoundedCornerShape(
+            topStart = 12.dp,
+            topEnd = 12.dp,
+            bottomStart = 12.dp,
+            bottomEnd = 12.dp,
+        )
+        Box(modifier = Modifier.fillMaxWidth().aspectRatio(1.2f)) {
+            if (!LocalInspectionMode.current) {
+                val requestData = remember(photoTile) {
+                    EncryptedImageRequestData(
+                        internalFileName = photoTile.internalThumbnailFileName,
+                        mimeType = photoTile.type.mimeType
+                    )
+                }
+                Image(
+                    painter = rememberEncryptedImagePainter(requestData),
+                    contentDescription = photoTile.fileName,
+                    modifier = Modifier.fillMaxSize().clip(shape)
+                )
+            } else {
+                Box(modifier = Modifier.fillMaxSize().clip(shape).background(Color.DarkGray))
+            }
+            if (photoTile.type.isVideo) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_videocam),
+                    contentDescription = null,
+                    tint = Color.White,
+                    modifier = Modifier.padding(4.dp).size(24.dp).align(Alignment.BottomStart),
+                )
+            }
+            if (multiSelectionActive && selected) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_check_circle),
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.secondary,
+                    modifier = Modifier.padding(4.dp).align(Alignment.TopStart),
+                )
+            }
+        }
+        Text(
+            text = photoTile.fileName,
+            style = MaterialTheme.typography.bodySmall,
+            maxLines = 1,
+            modifier = Modifier.padding(start = 4.dp, top = 2.dp),
+        )
+    }
+}
+
+private data class TimelineGroup(
+    val label: String,
+    val items: List<PhotoTile>,
+)
+
+private fun groupByDate(photos: List<PhotoTile>): List<TimelineGroup> {
+    val today = Calendar.getInstance()
+    val yesterday = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, -1) }
+    val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+
+    val grouped = photos.groupBy { photo ->
+        val cal = Calendar.getInstance().apply { timeInMillis = photo.importedAt }
+        when {
+            cal.get(Calendar.YEAR) == today.get(Calendar.YEAR) &&
+                cal.get(Calendar.DAY_OF_YEAR) == today.get(Calendar.DAY_OF_YEAR) -> "Hôm nay"
+            cal.get(Calendar.YEAR) == yesterday.get(Calendar.YEAR) &&
+                cal.get(Calendar.DAY_OF_YEAR) == yesterday.get(Calendar.DAY_OF_YEAR) -> "Hôm qua"
+            else -> dateFormat.format(Date(photo.importedAt))
+        }
+    }
+
+    val order = listOf("Hôm nay", "Hôm qua") + grouped.keys
+        .filter { it != "Hôm nay" && it != "Hôm qua" }
+        .sortedByDescending { dateString ->
+            try { dateFormat.parse(dateString)?.time ?: 0L } catch (_: Exception) { 0L }
+        }
+
+    return order.mapNotNull { label ->
+        grouped[label]?.let { TimelineGroup(label, it) }
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun PhotoTimelineView(
+    photos: List<PhotoTile>,
+    multiSelectionState: MultiSelectionState,
+    openPhoto: (PhotoTile) -> Unit,
+    modifier: Modifier = Modifier,
+    lazyPhotos: LazyPagingItems<PhotoTile>? = null,
+) {
+    val totalCount = lazyPhotos?.itemCount ?: photos.size
+    val list = if (lazyPhotos != null) {
+        (0 until totalCount).mapNotNull { lazyPhotos.peek(it) }
+    } else photos
+
+    val groups = remember(list) { groupByDate(list) }
+
+    androidx.compose.foundation.lazy.LazyColumn(modifier = modifier.fillMaxWidth()) {
+        groups.forEach { group ->
+            stickyHeader {
+                Text(
+                    text = group.label,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(MaterialTheme.colorScheme.surface)
+                        .padding(horizontal = 12.dp, vertical = 6.dp),
+                )
+            }
+            items(group.items, key = { it.uuid }) { photo ->
+                TimelinePhotoRow(
+                    photoTile = photo,
+                    multiSelectionActive = multiSelectionState.isActive.value,
+                    selected = multiSelectionState.selectedItems.value.contains(photo.uuid),
+                    onClick = {
+                        if (multiSelectionState.isActive.value) {
+                            multiSelectionState.selectItem(photo.uuid)
+                        } else {
+                            openPhoto(photo)
+                        }
+                    },
+                    onLongClick = {
+                        multiSelectionState.selectItem(photo.uuid)
+                    },
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun TimelinePhotoRow(
+    photoTile: PhotoTile,
+    multiSelectionActive: Boolean,
+    selected: Boolean,
+    onClick: () -> Unit,
+    onLongClick: () -> Unit,
+) {
+    val haptic = LocalHapticFeedback.current
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .combinedClickable(
+                onClick = { onClick() },
+                onLongClick = {
+                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    onLongClick()
+                },
+            )
+            .padding(horizontal = 12.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(modifier = Modifier.size(64.dp)) {
+            val requestData = remember(photoTile) {
+                EncryptedImageRequestData(
+                    internalFileName = photoTile.internalThumbnailFileName,
+                    mimeType = photoTile.type.mimeType
+                )
+            }
+            Image(
+                painter = rememberEncryptedImagePainter(requestData),
+                contentDescription = photoTile.fileName,
+                modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(8.dp))
+            )
+            if (multiSelectionActive && selected) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_check_circle),
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.secondary,
+                    modifier = Modifier.padding(2.dp).align(Alignment.TopStart),
+                )
+            }
+        }
+        Column(modifier = Modifier.weight(1f).padding(start = 12.dp)) {
+            Text(
+                text = photoTile.fileName,
+                style = MaterialTheme.typography.bodyMedium,
+                maxLines = 1,
+            )
+            Text(
+                text = formatTimeAgo(photoTile.importedAt),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        Text(
+            text = formatFileSize(photoTile.size),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+    HorizontalDivider(modifier = Modifier.padding(horizontal = 12.dp))
+}
+
+private fun formatTimeAgo(timestamp: Long): String {
+    val now = System.currentTimeMillis()
+    val diff = now - timestamp
+    val minutes = diff / 60000
+    val hours = minutes / 60
+    val days = hours / 24
+
+    return when {
+        minutes < 1 -> "Vừa xong"
+        minutes < 60 -> "${minutes} phút trước"
+        hours < 24 -> "${hours} giờ trước"
+        days < 7 -> "${days} ngày trước"
+        else -> formatDate(timestamp)
     }
 }
 

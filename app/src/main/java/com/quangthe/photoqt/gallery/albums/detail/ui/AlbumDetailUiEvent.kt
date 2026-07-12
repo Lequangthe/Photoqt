@@ -17,9 +17,10 @@
 package com.quangthe.photoqt.gallery.albums.detail.ui
 
 import android.net.Uri
-import com.quangthe.photoqt.sort.domain.Sort
+import com.quangthe.photoqt.gallery.components.GalleryViewMode
 import com.quangthe.photoqt.gallery.components.ImportChoice
 import com.quangthe.photoqt.gallery.components.PhotoTile
+import com.quangthe.photoqt.sort.domain.Sort
 
 sealed interface AlbumDetailUiEvent {
     data class OpenPhoto(val item: PhotoTile) : AlbumDetailUiEvent
@@ -30,5 +31,6 @@ sealed interface AlbumDetailUiEvent {
     data class RenameAlbum(val newName: String) : AlbumDetailUiEvent
     data class OnImportChoice(val choice: ImportChoice) : AlbumDetailUiEvent
     data class SortChanged(val sort: Sort) : AlbumDetailUiEvent
+    data class ViewModeChanged(val viewMode: GalleryViewMode) : AlbumDetailUiEvent
     data class SetPinned(val items: List<String>, val pinned: Boolean) : AlbumDetailUiEvent
 }

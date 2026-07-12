@@ -8,13 +8,12 @@ import androidx.paging.PagingData
 import androidx.paging.cachedIn
 import androidx.paging.map
 import dagger.hilt.android.lifecycle.HiltViewModel
-import com.quangthe.photoqt.R
 import com.quangthe.photoqt.gallery.albums.domain.AlbumRepository
 import com.quangthe.photoqt.gallery.albums.domain.model.SmartCollectionType
 import com.quangthe.photoqt.gallery.albums.ui.compose.AlbumItem
+import com.quangthe.photoqt.gallery.components.GalleryViewMode
 import com.quangthe.photoqt.gallery.components.ImportChoice
 import com.quangthe.photoqt.gallery.components.PhotoTile
-import com.quangthe.photoqt.gallery.ui.importing.SharedUrisStore
 import com.quangthe.photoqt.gallery.ui.navigation.GalleryNavigationEvent
 import com.quangthe.photoqt.gallery.ui.navigation.PhotoAction
 import com.quangthe.photoqt.model.repositories.ImportSource
@@ -45,41 +44,21 @@ class GalleryViewModel @Inject constructor(
 
     private val sortFlow = sortRepository.observeSortFor(albumUuid = null, default = SortConfig.Gallery.default)
 
-    private val showUnassignedOnly = MutableStateFlow(false)
-
-    private val selectedSmartCollection = MutableStateFlow<SmartCollectionType?>(null)
-
-    private val showClassification = MutableStateFlow(false)
+    private val viewModeFlow = MutableStateFlow(GalleryViewMode.Grid)
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    val pagingDataFlow: Flow<PagingData<PhotoTile>> = combine(
-        sortFlow, showUnassignedOnly, selectedSmartCollection, showClassification
-    ) { sort, unassigned, collection, classification ->
-        Pair(Triple(sort, unassigned, collection), classification)
-    }.flatMapLatest { (triple, classification) ->
-        val (sort, unassigned, collection) = triple
-        val photoFlow: Flow<PagingData<com.quangthe.photoqt.model.database.entity.Photo>> = when {
-            classification -> photoRepository.observeUnassigned(sort).map { PagingData.from(it) }
-            unassigned -> photoRepository.observeUnassigned(sort).map { PagingData.from(it) }
-            collection != null -> when (collection) {
-                SmartCollectionType.AllPhotos -> photoRepository.observeAllPaged(sort)
-                SmartCollectionType.Favorites -> photoRepository.observeFavoritesPaged(sort)
-                SmartCollectionType.Videos -> photoRepository.observeVideosPaged(sort)
-                SmartCollectionType.Photos -> photoRepository.observeImagesPaged(sort)
-                SmartCollectionType.RecentlyAdded -> photoRepository.observeRecentlyAdded(sort).map { PagingData.from(it) }
-                SmartCollectionType.Trash -> photoRepository.observeTrashedPaged(sort)
-            }
-            else -> photoRepository.observeAllPaged(sort)
-        }
-        photoFlow.map { pagingData ->
-            pagingData.map { photo ->
+    val pagingDataFlow: Flow<PagingData<PhotoTile>> = sortFlow.flatMapLatest { sort ->
+        photoRepository.observeUnassigned(sort).map { list ->
+            PagingData.from(list.map { photo ->
                 PhotoTile(
                     fileName = photo.fileName,
                     type = photo.type,
                     uuid = photo.uuid,
+                    size = photo.size,
+                    importedAt = photo.importedAt,
                     isFavorite = photo.isFavorite,
                 )
-            }
+            })
         }
     }.cachedIn(viewModelScope)
 
@@ -97,16 +76,12 @@ class GalleryViewModel @Inject constructor(
 
     val uiState: StateFlow<GalleryUiState> = combine(
         combine(showAlbumSelectionDialog, sortFlow) { a, b -> Pair(a, b) },
-        combine(showUnassignedOnly, selectedSmartCollection, showClassification) { a, b, c -> Triple(a, b, c) },
-        albumsFlow,
-    ) { (dialog, sort), (unassigned, collection, classification), albums ->
+        combine(viewModeFlow, albumsFlow) { mode, albums -> Pair(mode, albums) },
+    ) { (dialog, sort), (mode, albums) ->
         galleryUiStateFactory.create(
-            photos = null,
             showAlbumSelectionDialog = dialog,
             sort = sort,
-            showUnassignedOnly = unassigned,
-            selectedSmartCollection = collection,
-            showClassification = classification,
+            viewMode = mode,
             classificationAlbums = albums,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), GalleryUiState.Empty)
@@ -128,23 +103,6 @@ class GalleryViewModel @Inject constructor(
             is GalleryUiEvent.SortChanged -> viewModelScope.launch {
                 sortRepository.updateSortFor(albumUuid = null, sort = event.sort)
             }
-            GalleryUiEvent.ToggleUnassignedFilter -> {
-                showUnassignedOnly.value = !showUnassignedOnly.value
-                selectedSmartCollection.value = null
-                showClassification.value = false
-            }
-            is GalleryUiEvent.SelectSmartCollection -> {
-                selectedSmartCollection.value = event.type
-                showUnassignedOnly.value = false
-                showClassification.value = false
-            }
-            GalleryUiEvent.ToggleClassification -> {
-                showClassification.value = !showClassification.value
-                if (showClassification.value) {
-                    selectedSmartCollection.value = null
-                    showUnassignedOnly.value = false
-                }
-            }
             is GalleryUiEvent.RemoveFromFavorites -> viewModelScope.launch {
                 event.photoUuids.forEach { uuid ->
                     photoRepository.toggleFavorite(uuid, false)
@@ -154,6 +112,9 @@ class GalleryViewModel @Inject constructor(
                 event.photoUuids.forEach { uuid ->
                     photoRepository.toggleFavorite(uuid, true)
                 }
+            }
+            is GalleryUiEvent.ViewModeChanged -> {
+                viewModeFlow.value = event.viewMode
             }
         }
     }

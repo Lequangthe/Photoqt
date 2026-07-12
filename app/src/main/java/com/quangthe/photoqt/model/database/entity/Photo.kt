@@ -57,6 +57,9 @@ data class Photo(
 
     @ColumnInfo(name = "deleted_at", defaultValue = "NULL")
     val deletedAt: Long? = null,
+
+    @ColumnInfo(name = "sha256", defaultValue = "NULL")
+    val sha256: String? = null,
 ) {
 
     val internalFileName: String
@@ -76,6 +79,7 @@ data class Photo(
         const val COL_SIZE = "size"
         const val COL_IS_FAVORITE = "is_favorite"
         const val COL_DELETED_AT = "deleted_at"
+        const val COL_SHA256 = "sha256"
         const val TABLE_NAME = "photo"
     }
 }

@@ -17,7 +17,7 @@
 package com.quangthe.photoqt.gallery.ui
 
 import android.net.Uri
-import com.quangthe.photoqt.gallery.albums.domain.model.SmartCollectionType
+import com.quangthe.photoqt.gallery.components.GalleryViewMode
 import com.quangthe.photoqt.sort.domain.Sort
 import com.quangthe.photoqt.gallery.components.ImportChoice
 import com.quangthe.photoqt.gallery.components.PhotoTile
@@ -30,9 +30,7 @@ sealed interface GalleryUiEvent {
     data object CancelAlbumSelection : GalleryUiEvent
     data class OnImportChoice(val choice: ImportChoice) : GalleryUiEvent
     data class SortChanged(val sort: Sort) : GalleryUiEvent
-    data object ToggleUnassignedFilter : GalleryUiEvent
-    data class SelectSmartCollection(val type: SmartCollectionType?) : GalleryUiEvent
+    data class ViewModeChanged(val viewMode: GalleryViewMode) : GalleryUiEvent
     data class RemoveFromFavorites(val photoUuids: List<String>) : GalleryUiEvent
     data class AddToFavorites(val photoUuids: List<String>) : GalleryUiEvent
-    data object ToggleClassification : GalleryUiEvent
 }

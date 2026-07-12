@@ -23,6 +23,8 @@ data class PhotoTile(
     val fileName: String,
     val type: PhotoType,
     val uuid: String,
+    val size: Long = 0L,
+    val importedAt: Long = 0L,
     val pinned: Boolean = false,
     val isFavorite: Boolean = false,
 ) {

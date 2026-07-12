@@ -55,6 +55,7 @@ fun AlbumDetailContent(
     PhotoGallery(
         photos = uiState.photos,
         albumName = uiState.albumName,
+        viewMode = uiState.viewMode,
         multiSelectionState = multiSelectionState,
         onOpenPhoto = { handleUiEvent(AlbumDetailUiEvent.OpenPhoto(it)) },
         onExport = { targetUri ->

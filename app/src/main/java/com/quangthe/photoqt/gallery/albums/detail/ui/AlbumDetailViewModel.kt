@@ -27,6 +27,7 @@ import com.quangthe.photoqt.R
 import com.quangthe.photoqt.gallery.albums.detail.ui.AlbumDetailNavigator.NavigationEvent.ShowToast
 import com.quangthe.photoqt.gallery.albums.domain.AlbumRepository
 import com.quangthe.photoqt.gallery.albums.domain.model.Album
+import com.quangthe.photoqt.gallery.components.GalleryViewMode
 import com.quangthe.photoqt.gallery.components.ImportChoice
 import com.quangthe.photoqt.gallery.components.PhotoTile
 import com.quangthe.photoqt.gallery.ui.navigation.PhotoAction
@@ -38,6 +39,7 @@ import com.quangthe.photoqt.sort.domain.SortRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
@@ -65,14 +67,17 @@ class AlbumDetailViewModel @AssistedInject constructor(
     private val pinnedPhotoIdsFlow = albumsRepository.observePinnedPhotoUUIDs(albumUUID)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(), emptySet())
 
+    private val viewModeFlow = MutableStateFlow(GalleryViewMode.Grid)
+
     private val photoActionsChannel = Channel<PhotoAction>()
     val photoActions = photoActionsChannel.receiveAsFlow()
 
     val uiState = combine(
         albumFlow,
         sortFlow,
+        viewModeFlow,
         pinnedPhotoIdsFlow,
-    ) { album, sort, pinnedIds ->
+    ) { album, sort, viewMode, pinnedIds ->
         AlbumDetailUiState(
             albumId = album.uuid,
             albumName = album.name,
@@ -82,9 +87,12 @@ class AlbumDetailViewModel @AssistedInject constructor(
                     it.type,
                     it.uuid,
                     pinned = it.uuid in pinnedIds,
+                    size = it.size,
+                    importedAt = it.importedAt,
                 )
             },
             sort = sort,
+            viewMode = viewMode,
             pinnedPhotoIds = pinnedIds,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), AlbumDetailUiState())
@@ -150,6 +158,9 @@ class AlbumDetailViewModel @AssistedInject constructor(
             is AlbumDetailUiEvent.OnImportChoice -> onImportChoice(event.choice)
             is AlbumDetailUiEvent.SortChanged -> viewModelScope.launch {
                 sortRepository.updateSortFor(albumUuid = albumUUID, sort = event.sort)
+            }
+            is AlbumDetailUiEvent.ViewModeChanged -> {
+                viewModeFlow.value = event.viewMode
             }
             is AlbumDetailUiEvent.SetPinned -> viewModelScope.launch {
                 albumsRepository.setPinned(event.items, albumFlow.value.uuid, event.pinned)

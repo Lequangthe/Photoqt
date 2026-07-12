@@ -41,6 +41,9 @@ interface PhotoDao {
     @Query("SELECT * FROM photo WHERE fileName = :fileName AND size = :size LIMIT 1")
     suspend fun findDuplicate(fileName: String, size: Long): Photo?
 
+    @Query("SELECT * FROM photo WHERE sha256 = :sha256 AND deleted_at IS NULL LIMIT 1")
+    suspend fun findDuplicateBySha256(sha256: String): Photo?
+
     @Query("UPDATE photo SET is_favorite = :favorite WHERE photo_uuid = :uuid")
     suspend fun updateFavorite(uuid: String, favorite: Boolean)
 

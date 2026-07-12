@@ -16,9 +16,8 @@
 
 package com.quangthe.photoqt.gallery.ui
 
-import android.net.Uri
-import com.quangthe.photoqt.gallery.albums.domain.model.SmartCollectionType
 import com.quangthe.photoqt.gallery.albums.ui.compose.AlbumItem
+import com.quangthe.photoqt.gallery.components.GalleryViewMode
 import com.quangthe.photoqt.sort.domain.Sort
 import com.quangthe.photoqt.gallery.components.PhotoTile
 
@@ -30,9 +29,7 @@ sealed interface GalleryUiState {
         val photos: List<PhotoTile> = emptyList(),
         val showAlbumSelectionDialog: Boolean = false,
         val sort: Sort,
-        val showUnassignedOnly: Boolean = false,
-        val selectedSmartCollection: SmartCollectionType? = null,
-        val showClassification: Boolean = false,
+        val viewMode: GalleryViewMode = GalleryViewMode.Grid,
         val classificationAlbums: List<AlbumItem> = emptyList(),
     ) : GalleryUiState
 }

@@ -16,6 +16,7 @@
 
 package com.quangthe.photoqt.gallery.albums.detail.ui
 
+import com.quangthe.photoqt.gallery.components.GalleryViewMode
 import com.quangthe.photoqt.gallery.components.PhotoTile
 import com.quangthe.photoqt.sort.domain.Sort
 import com.quangthe.photoqt.sort.domain.SortConfig
@@ -25,5 +26,6 @@ data class AlbumDetailUiState(
     val albumName: String = "",
     val photos: List<PhotoTile> = emptyList(),
     val sort: Sort = SortConfig.Album.default,
+    val viewMode: GalleryViewMode = GalleryViewMode.Grid,
     val pinnedPhotoIds: Set<String> = emptySet(),
 )
