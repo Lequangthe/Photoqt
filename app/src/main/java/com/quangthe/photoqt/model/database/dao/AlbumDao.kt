@@ -108,6 +108,9 @@ abstract class AlbumDao {
     @Query("UPDATE album SET name = :newName WHERE album_uuid = :albumUUID")
     abstract suspend fun renameAlbum(albumUUID: String, newName: String)
 
+    @Query("SELECT album_uuid FROM album_photos_cross_ref WHERE photo_uuid = :photoUUID")
+    abstract suspend fun getAlbumsForPhoto(photoUUID: String): List<String>
+
     @Query("DELETE FROM album_photos_cross_ref WHERE album_uuid = :albumId")
     abstract suspend fun removeAllPhotosFromAlbum(albumId: String)
 

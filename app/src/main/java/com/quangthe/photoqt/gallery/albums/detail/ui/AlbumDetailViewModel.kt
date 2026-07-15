@@ -36,6 +36,7 @@ import com.quangthe.photoqt.gallery.ui.navigation.PhotoAction.ExportPhotos
 import com.quangthe.photoqt.gallery.ui.navigation.PhotoAction.OpenPhoto
 import com.quangthe.photoqt.sort.domain.SortConfig
 import com.quangthe.photoqt.sort.domain.SortRepository
+import com.quangthe.photoqt.settings.data.Config
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
@@ -55,6 +56,7 @@ class AlbumDetailViewModel @AssistedInject constructor(
     private val albumsRepository: AlbumRepository,
     private val sortRepository: SortRepository,
     private val resources: Resources,
+    private val config: Config,
 ) : ViewModel() {
 
     private val sortFlow = sortRepository.observeSortFor(albumUuid = albumUUID, default = SortConfig.Album.default)
@@ -67,7 +69,7 @@ class AlbumDetailViewModel @AssistedInject constructor(
     private val pinnedPhotoIdsFlow = albumsRepository.observePinnedPhotoUUIDs(albumUUID)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(), emptySet())
 
-    private val viewModeFlow = MutableStateFlow(GalleryViewMode.Grid)
+    private val viewModeFlow = MutableStateFlow(config.galleryViewMode)
 
     private val photoActionsChannel = Channel<PhotoAction>()
     val photoActions = photoActionsChannel.receiveAsFlow()
@@ -161,6 +163,7 @@ class AlbumDetailViewModel @AssistedInject constructor(
             }
             is AlbumDetailUiEvent.ViewModeChanged -> {
                 viewModeFlow.value = event.viewMode
+                config.galleryViewMode = event.viewMode
             }
             is AlbumDetailUiEvent.SetPinned -> viewModelScope.launch {
                 albumsRepository.setPinned(event.items, albumFlow.value.uuid, event.pinned)

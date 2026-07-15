@@ -31,6 +31,7 @@ sealed interface GalleryUiEvent {
     data class OnImportChoice(val choice: ImportChoice) : GalleryUiEvent
     data class SortChanged(val sort: Sort) : GalleryUiEvent
     data class ViewModeChanged(val viewMode: GalleryViewMode) : GalleryUiEvent
+    data class TabChanged(val tab: GalleryTab) : GalleryUiEvent
     data class RemoveFromFavorites(val photoUuids: List<String>) : GalleryUiEvent
     data class AddToFavorites(val photoUuids: List<String>) : GalleryUiEvent
 }

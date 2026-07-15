@@ -41,6 +41,15 @@ android {
         }
     }
 
+    signingConfigs {
+        create("release") {
+            storeFile = file("D:\\APP ANDROID STUDIO LUU\\key")
+            storePassword = "123456"
+            keyAlias = "mykey"
+            keyPassword = "123456"
+        }
+    }
+
     buildTypes {
         getByName("debug") {
             isDebuggable = true
@@ -48,6 +57,7 @@ android {
 
         getByName("release") {
             isMinifyEnabled = true
+            signingConfig = signingConfigs.getByName("release")
 
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),

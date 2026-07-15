@@ -17,6 +17,7 @@
 package com.quangthe.photoqt.recoverymenu
 
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.viewModels
 import dagger.hilt.android.AndroidEntryPoint
 import com.quangthe.photoqt.R
@@ -42,6 +43,15 @@ class RecoveryMenuActivity :
 
         viewModel.navigationEvent.observe(this) {
             navigator.navigate(it, this)
+        }
+
+        viewModel.mergeResultEvent.observe(this) { count ->
+            val message = if (count > 0) {
+                getString(R.string.recovery_merge_duplicates_success, count)
+            } else {
+                getString(R.string.recovery_merge_duplicates_none)
+            }
+            Toast.makeText(this, message, Toast.LENGTH_LONG).show()
         }
     }
 

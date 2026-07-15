@@ -151,6 +151,58 @@ class PhotoRepository @Inject constructor(
 
     suspend fun findDuplicateBySha256(sha256: String) = photoDao.findDuplicateBySha256(sha256)
 
+    /**
+     * Finds and merges photos with identical content (SHA-256).
+     *
+     * For each group of duplicates, one "master" photo is kept, and others are merged:
+     * 1. Album links are moved to the master.
+     * 2. 'isFavorite' is updated (if any duplicate was favorite, master becomes favorite).
+     * 3. 'deletedAt' is updated (if master is deleted but a duplicate is not, master is restored).
+     * 4. Duplicate photo records and their files are deleted.
+     *
+     * @return Number of photos removed.
+     */
+    suspend fun mergeDuplicateContent(): Int {
+        val duplicateHashes = photoDao.getSha256WithDuplicates()
+        var removedCount = 0
+
+        duplicateHashes.forEach { hash ->
+            val allPhotos = photoDao.findAllBySha256(hash).sortedBy { it.importedAt }
+            if (allPhotos.size > 1) {
+                val master = allPhotos.first()
+                val slaves = allPhotos.drop(1)
+
+                var anyFavorite = master.isFavorite
+                var allDeleted = master.deletedAt != null
+
+                slaves.forEach { slave ->
+                    // 1. Move album links
+                    val albums = albumDao.getAlbumsForPhoto(slave.uuid)
+                    albums.forEach { albumUUID ->
+                        albumDao.link(master.uuid, albumUUID, System.currentTimeMillis())
+                    }
+
+                    if (slave.isFavorite) anyFavorite = true
+                    if (slave.deletedAt == null) allDeleted = false
+
+                    // 2. Delete internal data and record
+                    deleteInternalPhotoData(slave)
+                    photoDao.delete(slave)
+                    removedCount++
+                }
+
+                // Update master if needed
+                if (anyFavorite != master.isFavorite) {
+                    photoDao.updateFavorite(master.uuid, anyFavorite)
+                }
+                if (allDeleted != (master.deletedAt != null)) {
+                    photoDao.updateDeletedAt(master.uuid, if (allDeleted) master.deletedAt else null)
+                }
+            }
+        }
+        return removedCount
+    }
+
     // endregion
 
     // region IO
@@ -207,9 +259,18 @@ class PhotoRepository @Inject constructor(
 
         val existing = photoDao.findDuplicateBySha256(sha256)
         if (existing != null) {
-            Timber.d("Duplicate content detected by SHA-256: %s. Skipping.", sha256)
+            if (existing.deletedAt != null) {
+                Timber.d("Duplicate content detected in TRASH. Restoring photo: %s", sha256)
+                photoDao.updateDeletedAt(existing.uuid, null)
+                // Optional: Update importedAt to bring it to top
+                photoDao.get(existing.uuid).copy(importedAt = System.currentTimeMillis()).let {
+                    photoDao.insert(it)
+                }
+            } else {
+                Timber.d("Duplicate content detected by SHA-256: %s. Linking existing photo.", sha256)
+            }
             deleteInternalPhotoData(photo)
-            return String.empty
+            return existing.uuid
         }
 
         val photoWithHash = photo.copy(size = fileLen, sha256 = sha256)

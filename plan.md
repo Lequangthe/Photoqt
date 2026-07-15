@@ -60,3 +60,26 @@
     - Chuyển đổi URI từ Photo Picker sang Collection URI (Images/Video) để MediaStore chấp nhận xoá.
     - Thêm fallback xoá qua `DocumentsContract.deleteDocument` cho các file SAF (Downloads, SD Card).
     - Tách biệt logic xử lý URI MediaStore và các loại URI khác.
+
+### Deduplication & Merge – Tối ưu hoá xử lý tệp trùng lặp
+- File thay đổi:
+  - PhotoRepository.kt, PhotoDao.kt, AlbumDao.kt
+  - ImportViewModel.kt
+  - RecoveryMenuActivity.kt, RecoveryMenuViewModel.kt, activity_recovery_menu.xml, strings.xml
+- Chi tiết:
+  - `safeImportPhoto` trả về UUID cũ nếu trùng SHA-256 thay vì String.empty.
+  - ImportViewModel tự động link ảnh cũ vào Album mới nếu phát hiện trùng nội dung, không báo lỗi.
+  - Thêm tính năng "Dọn dẹp tệp trùng lặp" trong Recovery Menu để quét và gộp các ảnh có cùng SHA-256.
+  - Giải phóng bộ nhớ bằng cách xoá file vật lý của các bản sao sau khi đã chuyển link album sang bản gốc.
+
+### Pinch-to-zoom View Mode – Thu phóng thay đổi kiểu hiển thị
+- File thay đổi:
+  - PhotoGallery.kt, GalleryViewMode.kt, PhotoGrid.kt (internal)
+  - GalleryViewModel.kt, AlbumDetailViewModel.kt
+  - Config.kt, strings.xml
+- Chi tiết:
+  - Bổ sung `GridSmall` (4 cột) và `GridCompact` (6 cột).
+  - Triển khai `detectTransformGestures` trong `PhotoGallery` để bắt cử chỉ chụm/mở.
+  - Tự động chuyển đổi giữa: 6 cột ↔ 4 cột ↔ 3 cột ↔ 1 cột (Column mode) dựa trên mức độ zoom.
+  - Lưu trạng thái `viewMode` vào DataStore (`Config`) để duy trì sau khi đóng app.
+  - Cập nhật UI menu chọn chế độ xem với tên gọi rõ ràng hơn.

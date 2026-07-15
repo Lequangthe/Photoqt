@@ -68,6 +68,7 @@
             app:layout_constraintTop_toBottomOf="@id/subline" />
 
         <TextView
+            android:id="@+id/resetHideApp"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="22dp"
@@ -80,6 +81,21 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/openPhotoqt" />
+
+        <TextView
+            android:id="@+id/mergeDuplicates"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="22dp"
+            android:drawableLeft="@drawable/ic_chevron_right"
+            android:onClick="@{() -> viewModel.mergeDuplicates()}"
+            android:paddingHorizontal="50dp"
+            android:paddingVertical="10dp"
+            android:text="@string/recovery_menu_item_merge_duplicates"
+            android:textStyle="bold"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/resetHideApp" />
 
         <TextView
             android:layout_width="wrap_content"

@@ -21,12 +21,19 @@ import com.quangthe.photoqt.gallery.components.GalleryViewMode
 import com.quangthe.photoqt.sort.domain.Sort
 import com.quangthe.photoqt.gallery.components.PhotoTile
 
+enum class GalleryTab {
+    All,
+    Classification
+}
+
 sealed interface GalleryUiState {
 
     data object Empty : GalleryUiState
 
     data class Content(
         val photos: List<PhotoTile> = emptyList(),
+        val allPhotos: List<PhotoTile> = emptyList(),
+        val selectedTab: GalleryTab = GalleryTab.Classification,
         val showAlbumSelectionDialog: Boolean = false,
         val sort: Sort,
         val viewMode: GalleryViewMode = GalleryViewMode.Grid,

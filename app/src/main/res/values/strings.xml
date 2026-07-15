@@ -63,6 +63,7 @@
     <string name="import_sharted_question">Bạn có muốn nhập %1$d tệp?</string>
     <string name="import_duplicate_title">Phát hiện tệp trùng</string>
     <string name="import_duplicate_message">Tệp %1\$s đã tồn tại trong két. Bạn có muốn nhập không?</string>
+    <string name="import_duplicate_in_trash_message">Tệp %1\$s đang nằm trong Thùng rác. Bạn có muốn khôi phục lại không?</string>
     <string name="import_duplicate_skip">Bỏ qua</string>
     <string name="import_duplicate_import_anyway">Vẫn nhập</string>
 
@@ -130,11 +131,15 @@
     <string name="view_photo_video_playback_speed">Tốc độ phát</string>
 
     <!-- VIEW MODES -->
-    <string name="view_mode_grid">Lưới</string>
+    <string name="view_mode_grid">Lưới (3 cột)</string>
+    <string name="view_mode_grid_small">Lưới nhỏ (4 cột)</string>
+    <string name="view_mode_grid_tiny">Lưới siêu nhỏ (6 cột)</string>
     <string name="view_mode_list">Danh sách</string>
     <string name="view_mode_column">Cột</string>
     <string name="view_mode_timeline">Dòng thời gian</string>
     <string name="view_mode_button">Chế độ xem</string>
+    <string name="gallery_tab_all">Tất cả</string>
+    <string name="gallery_tab_classification">Phân loại</string>
 
     <!-- MAIN MENU -->
     <string name="menu_main_lock">Khoá</string>
@@ -312,6 +317,9 @@
     <string name="recovery_subtitle">Menu phục hồi</string>
     <string name="recovery_menu_item_open_photok">Mở Photoqt</string>
     <string name="recovery_subtitle_reset_hide_app">Đặt lại cài đặt ẩn ứng dụng</string>
+    <string name="recovery_menu_item_merge_duplicates">Dọn dẹp tệp trùng lặp (SHA-256)</string>
+    <string name="recovery_merge_duplicates_success">Đã gộp %1$d tệp trùng lặp.</string>
+    <string name="recovery_merge_duplicates_none">Không tìm thấy tệp trùng lặp.</string>
 
     <!-- Migration -->
     <string name="migration_initial_title_welcome">Chào mừng đến với</string>

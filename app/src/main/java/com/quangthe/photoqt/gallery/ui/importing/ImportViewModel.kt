@@ -49,7 +49,7 @@ class ImportViewModel @Inject constructor(
 
     val deleteConsentFlow = deleteConsentRequest.receiveAsFlow()
 
-    private val duplicateRequest = Channel<String>(Channel.RENDEZVOUS)
+    private val duplicateRequest = Channel<Pair<String, Boolean>>(Channel.RENDEZVOUS)
     private var duplicateResult = kotlinx.coroutines.CompletableDeferred<Boolean>()
 
     val duplicateFlow = duplicateRequest.receiveAsFlow()
@@ -80,7 +80,8 @@ class ImportViewModel @Inject constructor(
 
             if (duplicate != null) {
                 duplicateResult = kotlinx.coroutines.CompletableDeferred()
-                duplicateRequest.send(metaData.fileName ?: "")
+                val isInTrash = duplicate.deletedAt != null
+                duplicateRequest.send((metaData.fileName ?: "") to isInTrash)
                 val importAnyway = duplicateResult.await()
                 if (!importAnyway) {
                     itemsToRemove.add(item)
@@ -98,12 +99,15 @@ class ImportViewModel @Inject constructor(
         val photoUUID = photoRepository.safeImportPhoto(
             sourceUri = item,
         )
+
         if (photoUUID.isEmpty()) {
+            Timber.w("Failed to import item: %s", item)
             failuresOccurred = true
             return
         }
 
         albumUUID?.let {
+            Timber.d("Linking photo %s to album %s", photoUUID, it)
             albumRepository.link(listOf(photoUUID), it)
         }
     }

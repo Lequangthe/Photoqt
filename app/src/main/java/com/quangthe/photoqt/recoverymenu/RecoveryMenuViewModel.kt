@@ -17,17 +17,22 @@
 package com.quangthe.photoqt.recoverymenu
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import com.quangthe.photoqt.model.repositories.PhotoRepository
 import com.quangthe.photoqt.other.SingleLiveEvent
 import com.quangthe.photoqt.settings.ui.hideapp.usecase.ToggleMainComponentUseCase
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class RecoveryMenuViewModel @Inject constructor(
-    private val toggleMainComponentUseCase: ToggleMainComponentUseCase
+    private val toggleMainComponentUseCase: ToggleMainComponentUseCase,
+    private val photoRepository: PhotoRepository,
 ) : ViewModel() {
 
     val navigationEvent = SingleLiveEvent<RecoveryMenuNavigator.NavigationEvent>()
+    val mergeResultEvent = SingleLiveEvent<Int>()
 
     fun openPhotoqt() {
         navigationEvent.value = RecoveryMenuNavigator.NavigationEvent.OpenPhotoqt
@@ -37,5 +42,12 @@ class RecoveryMenuViewModel @Inject constructor(
         toggleMainComponentUseCase()
 
         navigationEvent.value = RecoveryMenuNavigator.NavigationEvent.AfterResetHideApp
+    }
+
+    fun mergeDuplicates() {
+        viewModelScope.launch {
+            val result = photoRepository.mergeDuplicateContent()
+            mergeResultEvent.value = result
+        }
     }
 }

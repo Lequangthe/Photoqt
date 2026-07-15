@@ -83,8 +83,8 @@ class ImportBottomSheetDialogFragment(
         }
 
         lifecycleScope.launch {
-            viewModel.duplicateFlow.collect { fileName ->
-                showDuplicateDialog(fileName)
+            viewModel.duplicateFlow.collect { (fileName, isInTrash) ->
+                showDuplicateDialog(fileName, isInTrash)
             }
         }
     }
@@ -110,15 +110,21 @@ class ImportBottomSheetDialogFragment(
             .show()
     }
 
-    private fun showDuplicateDialog(fileName: String) {
+    private fun showDuplicateDialog(fileName: String, isInTrash: Boolean) {
         val context = requireContext()
         val title = getString(R.string.import_duplicate_title)
-        val message = getString(R.string.import_duplicate_message, fileName)
+        val message = getString(
+            if (isInTrash) R.string.import_duplicate_in_trash_message
+            else R.string.import_duplicate_message,
+            fileName
+        )
 
         androidx.appcompat.app.AlertDialog.Builder(context)
             .setTitle(title)
             .setMessage(message)
-            .setPositiveButton(R.string.import_duplicate_import_anyway) { _, _ ->
+            .setPositiveButton(
+                if (isInTrash) R.string.trash_restore else R.string.import_duplicate_import_anyway
+            ) { _, _ ->
                 viewModel.setDuplicateResult(true)
             }
             .setNegativeButton(R.string.import_duplicate_skip) { _, _ ->

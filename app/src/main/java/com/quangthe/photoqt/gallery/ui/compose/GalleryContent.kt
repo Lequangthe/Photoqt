@@ -25,6 +25,7 @@ import com.quangthe.photoqt.gallery.components.MultiSelectionState
 import com.quangthe.photoqt.gallery.components.PhotoGallery
 import com.quangthe.photoqt.gallery.components.PhotoTile
 import com.quangthe.photoqt.gallery.components.rememberMultiSelectionState
+import com.quangthe.photoqt.gallery.ui.GalleryTab
 import com.quangthe.photoqt.gallery.ui.GalleryUiEvent
 import com.quangthe.photoqt.gallery.ui.GalleryUiState
 import com.quangthe.photoqt.model.database.entity.PhotoType
@@ -43,38 +44,41 @@ fun GalleryContent(
     onAlbumClicked: (String) -> Unit = {},
 ) {
     Column(modifier = modifier.fillMaxSize()) {
-        if (uiState.classificationAlbums.isNotEmpty()) {
-            Text(
-                text = stringResource(R.string.gallery_albums_label),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(start = 12.dp, top = 8.dp, bottom = 4.dp),
-            )
-            AlbumsGrid(
-                albums = uiState.classificationAlbums,
-                onAlbumClicked = onAlbumClicked,
-                modifier = Modifier.fillMaxWidth(),
-            )
-            HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-            Text(
-                text = stringResource(R.string.gallery_filter_unassigned),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(start = 12.dp, top = 4.dp, bottom = 4.dp),
-            )
-        } else {
-            Text(
-                text = stringResource(R.string.gallery_filter_unassigned),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(start = 12.dp, top = 8.dp, bottom = 4.dp),
-            )
+        if (uiState.selectedTab == GalleryTab.Classification) {
+            if (uiState.classificationAlbums.isNotEmpty()) {
+                Text(
+                    text = stringResource(R.string.gallery_albums_label),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(start = 12.dp, top = 8.dp, bottom = 4.dp),
+                )
+                AlbumsGrid(
+                    albums = uiState.classificationAlbums,
+                    onAlbumClicked = onAlbumClicked,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+                Text(
+                    text = stringResource(R.string.gallery_filter_unassigned),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(start = 12.dp, top = 4.dp, bottom = 4.dp),
+                )
+            } else {
+                Text(
+                    text = stringResource(R.string.gallery_filter_unassigned),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(start = 12.dp, top = 8.dp, bottom = 4.dp),
+                )
+            }
         }
 
         PhotoGallery(
             modifier = Modifier.weight(1f).fillMaxWidth(),
             viewMode = viewMode,
-            photos = uiState.photos,
+            onViewModeChanged = { handleUiEvent(GalleryUiEvent.ViewModeChanged(it)) },
+            photos = if (uiState.selectedTab == GalleryTab.All) uiState.allPhotos else uiState.photos,
             lazyPhotos = lazyPhotos,
             albumName = null,
             multiSelectionState = multiSelectionState,

@@ -125,6 +125,10 @@ class Config(context: Context) {
         get() = getBoolean(TELEMETRY_ASKED_FOR_OPT_IN, TELEMETRY_ASKED_FOR_OPT_IN_DEFAULT)
         set(value) = putBoolean(TELEMETRY_ASKED_FOR_OPT_IN, value)
 
+    var galleryViewMode: com.quangthe.photoqt.gallery.components.GalleryViewMode
+        get() = com.quangthe.photoqt.gallery.components.GalleryViewMode.valueOf(getString(GALLERY_VIEW_MODE, com.quangthe.photoqt.gallery.components.GalleryViewMode.Grid.name)!!)
+        set(value) = putString(GALLERY_VIEW_MODE, value.name)
+
     // In memory flags
     var justFinishedSetup: Boolean = false
 
@@ -272,5 +276,7 @@ class Config(context: Context) {
 
         const val TELEMETRY_ASKED_FOR_OPT_IN = "telemetry^askedForOptIn"
         const val TELEMETRY_ASKED_FOR_OPT_IN_DEFAULT = false
+
+        const val GALLERY_VIEW_MODE = "gallery^viewMode"
     }
 }

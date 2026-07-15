@@ -78,6 +78,7 @@ import androidx.compose.ui.graphics.shadow.Shadow
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -120,6 +121,7 @@ fun PhotoGallery(
     additionalMultiSelectionActions: @Composable (ColumnScope.() -> Unit),
     modifier: Modifier = Modifier,
     lazyPhotos: LazyPagingItems<PhotoTile>? = null,
+    onViewModeChanged: (GalleryViewMode) -> Unit = {},
 ) {
     val activity = LocalActivity.current
     var importMenuBottomSheetVisible by remember { mutableStateOf(false) }
@@ -132,9 +134,46 @@ fun PhotoGallery(
         }
     }
 
-    Box(modifier = modifier.fillMaxSize()) {
+    var scale by remember { mutableStateOf(1f) }
+
+    Box(modifier = modifier
+        .fillMaxSize()
+        .pointerInput(viewMode) {
+            detectTransformGestures { _, _, zoom, _ ->
+                scale *= zoom
+                if (scale > 1.35f) {
+                    // Zoom in -> Fewer columns (Bigger items)
+                    val nextMode = when (viewMode) {
+                        GalleryViewMode.GridCompact -> GalleryViewMode.GridSmall
+                        GalleryViewMode.GridSmall -> GalleryViewMode.Grid
+                        GalleryViewMode.Grid -> GalleryViewMode.Column
+                        GalleryViewMode.List -> GalleryViewMode.Grid
+                        GalleryViewMode.Timeline -> GalleryViewMode.Grid
+                        else -> null
+                    }
+                    nextMode?.let { onViewModeChanged(it) }
+                    scale = 1f
+                } else if (scale < 0.65f) {
+                    // Zoom out -> More columns (Smaller items)
+                    val nextMode = when (viewMode) {
+                        GalleryViewMode.Column -> GalleryViewMode.Grid
+                        GalleryViewMode.Grid -> GalleryViewMode.GridSmall
+                        GalleryViewMode.GridSmall -> GalleryViewMode.GridCompact
+                        GalleryViewMode.List -> GalleryViewMode.GridSmall
+                        GalleryViewMode.Timeline -> GalleryViewMode.GridSmall
+                        else -> null
+                    }
+                    nextMode?.let { onViewModeChanged(it) }
+                    scale = 1f
+                }
+            }
+        }
+    ) {
         when (viewMode) {
-            GalleryViewMode.Grid -> PhotoGrid(
+            GalleryViewMode.Grid,
+            GalleryViewMode.GridSmall,
+            GalleryViewMode.GridCompact -> PhotoGrid(
+                viewMode = viewMode,
                 photos = photos,
                 multiSelectionState = multiSelectionState,
                 openPhoto = onOpenPhoto,
@@ -332,6 +371,7 @@ fun PhotoGallery(
 
 @Composable
 private fun PhotoGrid(
+    viewMode: GalleryViewMode,
     photos: List<PhotoTile>,
     multiSelectionState: MultiSelectionState,
     openPhoto: (PhotoTile) -> Unit,
@@ -341,10 +381,13 @@ private fun PhotoGrid(
     val gridState: LazyGridState = rememberLazyGridState()
     val haptic = LocalHapticFeedback.current
 
-    val columnCount = when (LocalConfiguration.current.orientation) {
-        Configuration.ORIENTATION_PORTRAIT -> PORTRAIT_COLUMN_COUNT
-        Configuration.ORIENTATION_LANDSCAPE -> LANDSCAPE_COLUMN_COUNT
-        else -> PORTRAIT_COLUMN_COUNT
+    val isPortrait = LocalConfiguration.current.orientation == Configuration.ORIENTATION_PORTRAIT
+
+    val columnCount = when (viewMode) {
+        GalleryViewMode.Grid -> if (isPortrait) 3 else 6
+        GalleryViewMode.GridSmall -> if (isPortrait) 4 else 8
+        GalleryViewMode.GridCompact -> if (isPortrait) 6 else 12
+        else -> if (isPortrait) 3 else 6
     }
 
     val currentPhotos by rememberUpdatedState(photos)

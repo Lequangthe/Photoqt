@@ -1,5 +1,6 @@
 package com.quangthe.photoqt.gallery.ui.compose
 
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
@@ -9,7 +10,10 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LargeTopAppBar
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -29,6 +33,7 @@ import com.quangthe.photoqt.gallery.components.AlbumPickerDialog
 import com.quangthe.photoqt.gallery.components.GalleryViewMode
 import com.quangthe.photoqt.gallery.components.ImportSharedDialog
 import com.quangthe.photoqt.gallery.components.rememberMultiSelectionState
+import com.quangthe.photoqt.gallery.ui.GalleryTab
 import com.quangthe.photoqt.gallery.ui.GalleryUiEvent
 import com.quangthe.photoqt.gallery.ui.GalleryUiState
 import com.quangthe.photoqt.gallery.ui.GalleryViewModel
@@ -52,75 +57,104 @@ fun GalleryScreen(
     AppTheme {
         Scaffold(
             topBar = {
-                LargeTopAppBar(
-                    title = { AppName() },
-                    windowInsets = WindowInsets.statusBars,
-                    scrollBehavior = scrollBehavior,
-                    actions = {
-                        if (uiState is GalleryUiState.Content) {
-                            val contentState = uiState as GalleryUiState.Content
-                            val sort = contentState.sort
-                            val viewMode = contentState.viewMode
+                Column {
+                    LargeTopAppBar(
+                        title = { AppName() },
+                        windowInsets = WindowInsets.statusBars,
+                        scrollBehavior = scrollBehavior,
+                        actions = {
+                            if (uiState is GalleryUiState.Content) {
+                                val contentState = uiState as GalleryUiState.Content
+                                val sort = contentState.sort
+                                val viewMode = contentState.viewMode
 
-                            var showSortMenu by remember { mutableStateOf(false) }
-                            var showViewModeMenu by remember { mutableStateOf(false) }
+                                var showSortMenu by remember { mutableStateOf(false) }
+                                var showViewModeMenu by remember { mutableStateOf(false) }
 
-                            SortingMenuIconButton(
-                                config = SortConfig.Gallery,
-                                sort = sort,
-                                onClick = { showSortMenu = true },
-                            )
-
-                            SortingMenu(
-                                config = SortConfig.Gallery,
-                                expanded = showSortMenu,
-                                onDismissRequest = { showSortMenu = false },
-                                sort = sort,
-                                onSortChanged = { sort ->
-                                    viewModel.handleUiEvent(GalleryUiEvent.SortChanged(sort))
-                                }
-                            )
-
-                            IconButton(onClick = { showViewModeMenu = true }) {
-                                Icon(
-                                    painter = painterResource(R.drawable.ic_image),
-                                    contentDescription = stringResource(R.string.view_mode_button),
+                                SortingMenuIconButton(
+                                    config = SortConfig.Gallery,
+                                    sort = sort,
+                                    onClick = { showSortMenu = true },
                                 )
-                            }
-                            DropdownMenu(
-                                expanded = showViewModeMenu,
-                                onDismissRequest = { showViewModeMenu = false },
-                            ) {
-                                GalleryViewMode.entries.forEach { mode ->
-                                    DropdownMenuItem(
-                                        text = {
-                                            Text(
-                                                if (mode == viewMode) "✓ ${stringResource(mode.labelRes)}"
-                                                else stringResource(mode.labelRes)
-                                            )
-                                        },
-                                        onClick = {
-                                            viewModel.handleUiEvent(GalleryUiEvent.ViewModeChanged(mode))
-                                            showViewModeMenu = false
-                                        },
+
+                                SortingMenu(
+                                    config = SortConfig.Gallery,
+                                    expanded = showSortMenu,
+                                    onDismissRequest = { showSortMenu = false },
+                                    sort = sort,
+                                    onSortChanged = { sort ->
+                                        viewModel.handleUiEvent(GalleryUiEvent.SortChanged(sort))
+                                    }
+                                )
+
+                                IconButton(onClick = { showViewModeMenu = true }) {
+                                    Icon(
+                                        painter = painterResource(R.drawable.ic_image),
+                                        contentDescription = stringResource(R.string.view_mode_button),
+                                    )
+                                }
+                                DropdownMenu(
+                                    expanded = showViewModeMenu,
+                                    onDismissRequest = { showViewModeMenu = false },
+                                ) {
+                                    GalleryViewMode.entries.forEach { mode ->
+                                        DropdownMenuItem(
+                                            text = {
+                                                Text(
+                                                    if (mode == viewMode) "✓ ${stringResource(mode.labelRes)}"
+                                                    else stringResource(mode.labelRes)
+                                                )
+                                            },
+                                            onClick = {
+                                                viewModel.handleUiEvent(GalleryUiEvent.ViewModeChanged(mode))
+                                                showViewModeMenu = false
+                                            },
+                                        )
+                                    }
+                                }
+
+                                IconButton(
+                                    onClick = { viewModel.openSmartCollection(SmartCollectionType.Trash) }
+                                ) {
+                                    Icon(
+                                        painter = painterResource(R.drawable.ic_delete),
+                                        contentDescription = stringResource(R.string.collection_trash),
                                     )
                                 }
                             }
+                        }
+                    )
 
-                            IconButton(
-                                onClick = { viewModel.openSmartCollection(SmartCollectionType.Trash) }
-                            ) {
-                                Icon(
-                                    painter = painterResource(R.drawable.ic_delete),
-                                    contentDescription = stringResource(R.string.collection_trash),
+                    if (uiState is GalleryUiState.Content) {
+                        val contentState = uiState as GalleryUiState.Content
+                        TabRow(
+                            selectedTabIndex = contentState.selectedTab.ordinal,
+                            containerColor = MaterialTheme.colorScheme.surface,
+                            contentColor = MaterialTheme.colorScheme.primary,
+                            divider = {}
+                        ) {
+                            GalleryTab.entries.forEach { tab ->
+                                Tab(
+                                    selected = contentState.selectedTab == tab,
+                                    onClick = { viewModel.handleUiEvent(GalleryUiEvent.TabChanged(tab)) },
+                                    text = {
+                                        Text(
+                                            text = stringResource(
+                                                if (tab == GalleryTab.All) R.string.gallery_tab_all
+                                                else R.string.gallery_tab_classification
+                                            ),
+                                            style = MaterialTheme.typography.titleSmall
+                                        )
+                                    }
                                 )
                             }
                         }
                     }
-                )
+                }
             },
             modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection)
-        ) { contentPadding ->
+        )
+{ contentPadding ->
             val modifier = Modifier.padding(top = contentPadding.calculateTopPadding())
 
             when (uiState) {

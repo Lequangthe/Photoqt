@@ -20,6 +20,7 @@ import com.quangthe.photoqt.model.repositories.ImportSource
 import com.quangthe.photoqt.model.repositories.PhotoRepository
 import com.quangthe.photoqt.sort.domain.SortConfig
 import com.quangthe.photoqt.sort.domain.SortRepository
+import com.quangthe.photoqt.settings.data.Config
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -40,16 +41,19 @@ class GalleryViewModel @Inject constructor(
     private val albumRepository: AlbumRepository,
     private val galleryUiStateFactory: GalleryUiStateFactory,
     private val sortRepository: SortRepository,
+    private val config: Config,
 ) : ViewModel() {
 
     private val sortFlow = sortRepository.observeSortFor(albumUuid = null, default = SortConfig.Gallery.default)
 
-    private val viewModeFlow = MutableStateFlow(GalleryViewMode.Grid)
+    private val viewModeFlow = MutableStateFlow(config.galleryViewMode)
+
+    private val selectedTabFlow = MutableStateFlow(GalleryTab.Classification)
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    val pagingDataFlow: Flow<PagingData<PhotoTile>> = sortFlow.flatMapLatest { sort ->
+    private val unassignedPhotosFlow: Flow<List<PhotoTile>> = sortFlow.flatMapLatest { sort ->
         photoRepository.observeUnassigned(sort).map { list ->
-            PagingData.from(list.map { photo ->
+            list.map { photo ->
                 PhotoTile(
                     fileName = photo.fileName,
                     type = photo.type,
@@ -58,7 +62,47 @@ class GalleryViewModel @Inject constructor(
                     importedAt = photo.importedAt,
                     isFavorite = photo.isFavorite,
                 )
-            })
+            }
+        }
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private val allPhotosFlow: Flow<List<PhotoTile>> = sortFlow.flatMapLatest { sort ->
+        photoRepository.observeAll(sort).map { list ->
+            list.map { photo ->
+                PhotoTile(
+                    fileName = photo.fileName,
+                    type = photo.type,
+                    uuid = photo.uuid,
+                    size = photo.size,
+                    importedAt = photo.importedAt,
+                    isFavorite = photo.isFavorite,
+                )
+            }
+        }
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val pagingDataFlow: Flow<PagingData<PhotoTile>> = selectedTabFlow.flatMapLatest { tab ->
+        sortFlow.flatMapLatest { sort ->
+            val sourceFlow = if (tab == GalleryTab.All) {
+                photoRepository.observeAll(sort)
+            } else {
+                photoRepository.observeUnassigned(sort)
+            }
+
+            sourceFlow.map { list ->
+                PagingData.from(list.map { photo ->
+                    PhotoTile(
+                        fileName = photo.fileName,
+                        type = photo.type,
+                        uuid = photo.uuid,
+                        size = photo.size,
+                        importedAt = photo.importedAt,
+                        isFavorite = photo.isFavorite,
+                    )
+                })
+            }
         }
     }.cachedIn(viewModelScope)
 
@@ -75,16 +119,23 @@ class GalleryViewModel @Inject constructor(
     }
 
     val uiState: StateFlow<GalleryUiState> = combine(
-        combine(showAlbumSelectionDialog, sortFlow) { a, b -> Pair(a, b) },
-        combine(viewModeFlow, albumsFlow) { mode, albums -> Pair(mode, albums) },
-    ) { (dialog, sort), (mode, albums) ->
+        combine(showAlbumSelectionDialog, sortFlow, selectedTabFlow) { a, b, c -> Triple(a, b, c) },
+        combine(viewModeFlow, albumsFlow, unassignedPhotosFlow, allPhotosFlow) { mode, albums, unassigned, all ->
+            Quad(mode, albums, unassigned, all)
+        },
+    ) { (dialog, sort, tab), (mode, albums, unassigned, all) ->
         galleryUiStateFactory.create(
             showAlbumSelectionDialog = dialog,
             sort = sort,
             viewMode = mode,
             classificationAlbums = albums,
+            photos = unassigned,
+            allPhotos = all,
+            selectedTab = tab,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), GalleryUiState.Empty)
+
+    private data class Quad<A, B, C, D>(val first: A, val second: B, val third: C, val fourth: D)
 
     private val eventsChannel = Channel<GalleryNavigationEvent>()
     val eventsFlow = eventsChannel.receiveAsFlow()
@@ -115,6 +166,15 @@ class GalleryViewModel @Inject constructor(
             }
             is GalleryUiEvent.ViewModeChanged -> {
                 viewModeFlow.value = event.viewMode
+                config.galleryViewMode = event.viewMode
+            }
+            is GalleryUiEvent.TabChanged -> {
+                selectedTabFlow.value = event.tab
+                if (event.tab == GalleryTab.All) {
+                    viewModeFlow.value = GalleryViewMode.Timeline
+                } else {
+                    viewModeFlow.value = config.galleryViewMode
+                }
             }
         }
     }
